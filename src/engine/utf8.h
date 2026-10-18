@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -42,4 +43,7 @@ namespace fheroes2
     void appendUtf8Character( std::string & output, const uint32_t character );
 
     bool isValidUtf8( const std::string_view text );
+
+    // Returns the biggest position not exceeding the given one at which the text can be cut without splitting a UTF-8 character.
+    size_t getUtf8CharacterBoundary( const std::string_view text, const size_t position );
 }

@@ -439,6 +439,8 @@ namespace
         // Virtual keyboard button, text input and blinking cursor are used only in save game mode (when 'isEditing' is true ).
         std::unique_ptr<fheroes2::Button> buttonVirtualKB;
         std::unique_ptr<fheroes2::TextInputField> textInput;
+        bool isUtf8Text = false;
+        bool isSystemTextInput = false;
 
         const fheroes2::Text title( header, fheroes2::FontType::normalYellow() );
         title.drawInRoi( dialogArea.x + ( dialogArea.width - title.width() ) / 2, dialogArea.y + 9, display, dialogArea );
@@ -513,6 +515,8 @@ namespace
             // Prepare the text input and set it to always fit the file name input field width.
             textInput = std::make_unique<fheroes2::TextInputField>( fheroes2::Rect{ textInputRoi.x + 4, textInputRoi.y + 2, maxFileNameWidth, textInputRoi.height - 2 },
                                                                     false, true, display );
+            isUtf8Text = textInput->isUtf8Text();
+            isSystemTextInput = textInput->startSystemTextInput();
 
             if ( !listbox.isSelected() ) {
                 textInput->draw( filename, static_cast<int32_t>( charInsertPos ) );
@@ -638,9 +642,14 @@ namespace
                     const fheroes2::Key pressedKey = le.getPressedKeyValue();
                     if ( ( filename.size() < lengthLimit || pressedKey == fheroes2::Key::KEY_BACKSPACE || pressedKey == fheroes2::Key::KEY_DELETE )
                          && pressedKey != fheroes2::Key::KEY_UP && pressedKey != fheroes2::Key::KEY_DOWN ) {
-                        charInsertPos = InsertKeySym( filename, charInsertPos, pressedKey, LocalEvent::getCurrentKeyModifiers() );
+                        charInsertPos = isUtf8Text ? fheroes2::processUtf8TextEditingKey( filename, charInsertPos, pressedKey, !isSystemTextInput )
+                                                   : InsertKeySym( filename, charInsertPos, pressedKey, LocalEvent::getCurrentKeyModifiers() );
                         prepareRedraw = true;
                     }
+                }
+                else if ( isSystemTextInput && le.isTextInputEvent() ) {
+                    charInsertPos = fheroes2::insertUtf8Text( filename, charInsertPos, le.getTextInput(), lengthLimit );
+                    prepareRedraw = true;
                 }
 
                 if ( prepareRedraw ) {

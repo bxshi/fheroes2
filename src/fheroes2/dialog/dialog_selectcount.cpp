@@ -49,6 +49,7 @@
 #include "ui_text.h"
 #include "ui_tool.h"
 #include "ui_window.h"
+#include "utf8.h"
 
 namespace
 {
@@ -280,6 +281,8 @@ bool Dialog::inputString( const fheroes2::TextBase & title, const fheroes2::Text
     const fheroes2::Rect textEditClickArea{ textInputArea.x, textInputArea.y, textInputArea.width + 4, textInputArea.height };
 
     fheroes2::TextInputField textInput( textInputArea, isMultiLine, true, display, textLanguage );
+    const bool isUtf8Text = textInput.isUtf8Text();
+    const bool isSystemTextInput = textInput.startSystemTextInput();
     textInput.draw( result, static_cast<int32_t>( charInsertPos ) );
 
     const int okayButtonICNID = isEvilInterface ? ICN::UNIFORM_EVIL_OKAY_BUTTON : ICN::UNIFORM_GOOD_OKAY_BUTTON;
@@ -353,7 +356,7 @@ bool Dialog::inputString( const fheroes2::TextBase & title, const fheroes2::Text
             }
 
             if ( charLimit > 0 && result.size() > charLimit ) {
-                result.resize( charLimit );
+                result.resize( isUtf8Text ? fheroes2::getUtf8CharacterBoundary( result, charLimit ) : charLimit );
             }
             charInsertPos = result.size();
             redraw = true;
@@ -384,17 +387,30 @@ bool Dialog::inputString( const fheroes2::TextBase & title, const fheroes2::Text
                 // Character deletion shouldn't check any length as we are reducing the existing text.
                 // This is useful when the text is actually bigger that the text window and it is not possible to enter anything
                 // but we have to allow to delete characters.
-                charInsertPos = InsertKeySym( result, charInsertPos, le.getPressedKeyValue(), LocalEvent::getCurrentKeyModifiers() );
+                charInsertPos = isUtf8Text ? fheroes2::processUtf8TextEditingKey( result, charInsertPos, le.getPressedKeyValue(), !isSystemTextInput )
+                                           : InsertKeySym( result, charInsertPos, le.getPressedKeyValue(), LocalEvent::getCurrentKeyModifiers() );
             }
             else {
                 // We should verify the height of the text before allowing to enter one more line.
                 std::string tmp = result;
-                const size_t tempCharInsertPos = InsertKeySym( tmp, charInsertPos, le.getPressedKeyValue(), LocalEvent::getCurrentKeyModifiers() );
+                const size_t tempCharInsertPos = isUtf8Text ? fheroes2::processUtf8TextEditingKey( tmp, charInsertPos, le.getPressedKeyValue(), !isSystemTextInput )
+                                                            : InsertKeySym( tmp, charInsertPos, le.getPressedKeyValue(), LocalEvent::getCurrentKeyModifiers() );
 
                 if ( !isMultiLine || ( textInput.height( tmp ) <= textInputArea.height ) ) {
                     result = std::move( tmp );
                     charInsertPos = tempCharInsertPos;
                 }
+            }
+            redraw = true;
+        }
+        else if ( isSystemTextInput && le.isTextInputEvent() ) {
+            // We should verify the height of the text before allowing to enter more text.
+            std::string tmp = result;
+            const size_t tempCharInsertPos = fheroes2::insertUtf8Text( tmp, charInsertPos, le.getTextInput(), charLimit );
+
+            if ( !isMultiLine || ( textInput.height( tmp ) <= textInputArea.height ) ) {
+                result = std::move( tmp );
+                charInsertPos = tempCharInsertPos;
             }
             redraw = true;
         }

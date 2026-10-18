@@ -48,6 +48,8 @@
 #include <SDL_keyboard.h>
 #include <SDL_keycode.h>
 #include <SDL_mouse.h>
+#include <SDL_rect.h>
+#include <SDL_render.h>
 #include <SDL_stdinc.h>
 #include <SDL_timer.h>
 #include <SDL_touch.h>
@@ -65,6 +67,7 @@
 #include "logging.h"
 #include "render_processor.h"
 #include "screen.h"
+#include "utf8.h"
 
 namespace
 {
@@ -299,6 +302,14 @@ namespace EventProcessing
             // Do not enable them here.
             setEventProcessingState( SDL_TEXTEDITING, false );
             setEventProcessingState( SDL_TEXTINPUT, false );
+#if SDL_VERSION_ATLEAST( 2, 0, 22 )
+            // This event is sent instead of SDL_TEXTEDITING for long input method compositions only when SDL_TEXTEDITING is enabled.
+            setEventProcessingState( SDL_TEXTEDITING_EXT, true );
+
+            if ( SDL_SetHint( SDL_HINT_IME_SUPPORT_EXTENDED_TEXT, "1" ) != SDL_TRUE ) {
+                ERROR_LOG( "Failed to set the " SDL_HINT_IME_SUPPORT_EXTENDED_TEXT " hint." )
+            }
+#endif
             setEventProcessingState( SDL_KEYMAPCHANGED, false ); // supported from SDL 2.0.4
             setEventProcessingState( SDL_MOUSEMOTION, true );
             setEventProcessingState( SDL_MOUSEBUTTONDOWN, true );
@@ -354,7 +365,6 @@ namespace EventProcessing
             // SDL_CONTROLLERTOUCHPADMOTION is supported from SDL 2.0.14
             // SDL_CONTROLLERTOUCHPADUP is supported from SDL 2.0.14
             // SDL_CONTROLLERSENSORUPDATE is supported from SDL 2.0.14
-            // SDL_TEXTEDITING_EXT is supported only from SDL 2.0.22
             // SDL_POLLSENTINEL is supported from SDL 2.0.?
         }
 
@@ -420,6 +430,40 @@ namespace EventProcessing
         bool isControllerValid() const
         {
             return _gameController != nullptr;
+        }
+
+        static void startTextInput( const fheroes2::Rect & inputArea )
+        {
+            SDL_Rect rect{ inputArea.x, inputArea.y, inputArea.width, inputArea.height };
+
+#if SDL_VERSION_ATLEAST( 2, 0, 18 )
+            // The game is rendered in logical coordinates which are scaled to the window size.
+            SDL_Window * window = SDL_GetKeyboardFocus();
+            SDL_Renderer * renderer = ( window != nullptr ) ? SDL_GetRenderer( window ) : nullptr;
+            if ( renderer != nullptr ) {
+                int right = 0;
+                int bottom = 0;
+                SDL_RenderLogicalToWindow( renderer, static_cast<float>( inputArea.x ), static_cast<float>( inputArea.y ), &rect.x, &rect.y );
+                SDL_RenderLogicalToWindow( renderer, static_cast<float>( inputArea.x + inputArea.width ), static_cast<float>( inputArea.y + inputArea.height ), &right,
+                                           &bottom );
+                rect.w = right - rect.x;
+                rect.h = bottom - rect.y;
+            }
+#endif
+
+            SDL_StartTextInput();
+            SDL_SetTextInputRect( &rect );
+        }
+
+        static void stopTextInput()
+        {
+            SDL_StopTextInput();
+        }
+
+        static bool isTextInputSupported()
+        {
+            // Starting the text input shows the screen keyboard on devices which have it. The in-game virtual keyboard is used there instead.
+            return SDL_HasScreenKeyboardSupport() != SDL_TRUE;
         }
 
         static void sleep( const uint32_t milliseconds )
@@ -512,11 +556,17 @@ namespace EventProcessing
                     updateDisplay = true;
                     break;
                 case SDL_TEXTINPUT:
-                    // Keyboard events on Android should be processed here. Use event.text.text to extract text input.
+                    eventHandler.onTextInputEvent( event.text.text );
                     break;
                 case SDL_TEXTEDITING:
-                    // An event when a user pressed a button on a keyboard. Not all buttons are supported. This event should be used mainly on Android devices.
+                    eventHandler.onTextEditingEvent( event.edit.text );
                     break;
+#if SDL_VERSION_ATLEAST( 2, 0, 22 )
+                case SDL_TEXTEDITING_EXT:
+                    eventHandler.onTextEditingEvent( event.editExt.text );
+                    SDL_free( event.editExt.text );
+                    break;
+#endif
                 case SDL_QUIT:
                     if ( allowExit ) {
                         // Try to perform clear exit to catch all memory leaks, for example.
@@ -930,6 +980,11 @@ namespace EventProcessing
 
         static void onKeyboardEvent( LocalEvent & eventHandler, const SDL_KeyboardEvent & event )
         {
+            if ( event.type == SDL_KEYDOWN && !eventHandler.getTextComposition().empty() ) {
+                // Keys pressed during input method composition are processed by the input method itself.
+                return;
+            }
+
             const fheroes2::Key key = getKeyFromSDL( event.keysym.sym );
             if ( key == fheroes2::Key::NONE ) {
                 // We do not process this key.
@@ -1214,6 +1269,66 @@ namespace fheroes2
 
         return pos;
     }
+
+    size_t processUtf8TextEditingKey( std::string & res, size_t pos, const Key key, const bool insertPrintableCharacters )
+    {
+        assert( pos <= res.size() );
+
+        const uint8_t * data = reinterpret_cast<const uint8_t *>( res.data() );
+
+        switch ( key ) {
+        case fheroes2::Key::KEY_BACKSPACE:
+            if ( pos > 0 ) {
+                const size_t length = static_cast<size_t>( getPreviousUtf8CharacterLength( data, data + pos ) );
+                res.erase( pos - length, length );
+                pos -= length;
+            }
+            break;
+        case fheroes2::Key::KEY_DELETE:
+            if ( pos < res.size() ) {
+                uint32_t character = 0;
+                res.erase( pos, static_cast<size_t>( decodeUtf8Character( data + pos, data + res.size(), character ) ) );
+            }
+            break;
+        case fheroes2::Key::KEY_LEFT:
+            if ( pos > 0 ) {
+                pos -= static_cast<size_t>( getPreviousUtf8CharacterLength( data, data + pos ) );
+            }
+            break;
+        case fheroes2::Key::KEY_RIGHT:
+            if ( pos < res.size() ) {
+                uint32_t character = 0;
+                pos += static_cast<size_t>( decodeUtf8Character( data + pos, data + res.size(), character ) );
+            }
+            break;
+        case fheroes2::Key::KEY_HOME:
+            pos = 0;
+            break;
+        case fheroes2::Key::KEY_END:
+            pos = res.size();
+            break;
+        default:
+            if ( insertPrintableCharacters ) {
+                return InsertKeySym( res, pos, key, LocalEvent::getCurrentKeyModifiers() );
+            }
+            break;
+        }
+
+        return pos;
+    }
+
+    size_t insertUtf8Text( std::string & res, size_t pos, std::string_view text, const size_t lengthLimit )
+    {
+        assert( pos <= res.size() );
+
+        if ( lengthLimit > 0 ) {
+            text = text.substr( 0, getUtf8CharacterBoundary( text, ( lengthLimit > res.size() ) ? lengthLimit - res.size() : 0 ) );
+        }
+
+        res.insert( pos, text );
+
+        return pos + text.size();
+    }
 }
 
 LocalEvent::LocalEvent()
@@ -1254,6 +1369,9 @@ bool LocalEvent::HandleEvents( const bool sleepAfterEventProcessing /* = true */
     resetStates( MOUSE_MOTION );
     resetStates( MOUSE_RELEASED );
     resetStates( MOUSE_WHEEL );
+    resetStates( TEXT_INPUT );
+
+    _textInput.clear();
 
     // MOUSE_PRESSED is an "ongoing" state, so we shouldn't reset the MOUSE_TOUCH while that state is active
     if ( !( _actionStates & MOUSE_PRESSED ) ) {
@@ -1671,6 +1789,55 @@ void LocalEvent::onKeyboardEvent( const fheroes2::Key key, const int32_t keyModi
     }
 
     _currentKeyboardValue = key;
+}
+
+void LocalEvent::onTextInputEvent( const char * text )
+{
+    setStates( TEXT_INPUT );
+
+    _textInput += text;
+    // The entered text replaces the input method composition.
+    _textComposition.clear();
+}
+
+void LocalEvent::onTextEditingEvent( const char * text )
+{
+    setStates( TEXT_INPUT );
+
+    _textComposition = text;
+}
+
+bool LocalEvent::startTextInput( const fheroes2::Rect & inputArea )
+{
+    if ( !EventProcessing::EventEngine::isTextInputSupported() ) {
+        return false;
+    }
+
+    _textInputAreas.push_back( inputArea );
+    _textComposition.clear();
+
+    EventProcessing::EventEngine::startTextInput( inputArea );
+
+    return true;
+}
+
+void LocalEvent::stopTextInput()
+{
+    if ( _textInputAreas.empty() ) {
+        // The text input has not been started!
+        assert( 0 );
+        return;
+    }
+
+    _textInputAreas.pop_back();
+    _textComposition.clear();
+
+    if ( _textInputAreas.empty() ) {
+        EventProcessing::EventEngine::stopTextInput();
+    }
+    else {
+        EventProcessing::EventEngine::startTextInput( _textInputAreas.back() );
+    }
 }
 
 void LocalEvent::onMouseMotionEvent( fheroes2::Point position )

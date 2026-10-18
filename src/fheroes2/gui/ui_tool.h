@@ -149,6 +149,16 @@ namespace fheroes2
     public:
         TextInputField( const Rect & textArea, const bool isMultiLine, const bool isCenterAligned, Image & output, const std::optional<SupportedLanguage> language = {} );
 
+        ~TextInputField();
+
+        // Starts the system text input (including input methods) if the text of this field is UTF-8 encoded. In this case printable characters
+        // must be taken from `LocalEvent::getTextInput()` instead of key presses. The system text input is stopped when this field is destroyed.
+        // Returns true if the system text input has been started.
+        bool startSystemTextInput();
+
+        // Returns true if the text of this field is UTF-8 encoded so it must be edited by whole characters.
+        bool isUtf8Text() const;
+
         // Returns `true` when rendering of this UI element is needed.
         bool eventProcessing();
 
@@ -169,12 +179,10 @@ namespace fheroes2
         void set( std::string text, const int32_t cursorPosition )
         {
             _text.set( std::move( text ), cursorPosition );
+            _compositionLength = 0;
         }
 
-        size_t getCursorInTextPosition( const Point & pos ) const
-        {
-            return _text.getCursorPosition( pos, _textInputArea, _isSingleLineTextCenterAligned );
-        }
+        size_t getCursorInTextPosition( const Point & pos ) const;
 
         size_t getCursorPositionInAdjacentLine( const size_t currentPos, const bool moveUp )
         {
@@ -194,7 +202,11 @@ namespace fheroes2
         MovableSprite _cursor;
         ImageRestorer _background;
         Rect _textInputArea;
+        // Position and length of the input method composition which is shown in the field but is not a part of the text.
+        size_t _compositionPosition{ 0 };
+        size_t _compositionLength{ 0 };
         bool _isSingleLineTextCenterAligned{ false };
+        bool _isSystemTextInputStarted{ false };
     };
 
     // Renderer of current time and FPS on screen

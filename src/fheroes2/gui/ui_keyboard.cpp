@@ -133,6 +133,7 @@ namespace
             , _lengthLimit( lengthLimit )
             , _cursorPosition( info.size() )
             , _isEvilInterface( evilInterface )
+            , _isUtf8( fheroes2::getCodePage( fheroes2::getCurrentLanguage() ) == fheroes2::CodePage::UTF8 )
         {
             // Do nothing.
         }
@@ -221,6 +222,13 @@ namespace
                 return;
             }
 
+            if ( _isUtf8 ) {
+                _cursorPosition = fheroes2::processUtf8TextEditingKey( _info, _cursorPosition, fheroes2::Key::KEY_BACKSPACE, false );
+                _renderInputArea();
+
+                return;
+            }
+
             if ( _cursorPosition >= _info.size() ) {
                 _info.pop_back();
             }
@@ -283,7 +291,7 @@ namespace
                     return;
                 }
 
-                --_cursorPosition;
+                _cursorPosition = _isUtf8 ? fheroes2::processUtf8TextEditingKey( _info, _cursorPosition, fheroes2::Key::KEY_LEFT, false ) : _cursorPosition - 1;
 
                 break;
             case CursorPosition::NextChar:
@@ -293,7 +301,7 @@ namespace
                     return;
                 }
 
-                ++_cursorPosition;
+                _cursorPosition = _isUtf8 ? fheroes2::processUtf8TextEditingKey( _info, _cursorPosition, fheroes2::Key::KEY_RIGHT, false ) : _cursorPosition + 1;
 
                 break;
             case CursorPosition::BegOfText:
@@ -322,6 +330,8 @@ namespace
         size_t _cursorPosition{ 0 };
         fheroes2::Rect _textInputArea{ 0, 0, inputAreaSize.width, inputAreaSize.height };
         const bool _isEvilInterface{ false };
+        // UTF-8 characters can occupy several bytes.
+        const bool _isUtf8{ false };
 
         void _renderInputArea()
         {

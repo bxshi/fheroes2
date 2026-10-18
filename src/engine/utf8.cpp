@@ -153,4 +153,33 @@ namespace fheroes2
 
         return true;
     }
+
+    size_t getUtf8CharacterBoundary( const std::string_view text, const size_t position )
+    {
+        if ( position >= text.size() ) {
+            return text.size();
+        }
+
+        const uint8_t * data = reinterpret_cast<const uint8_t *>( text.data() );
+        if ( !isContinuationByte( data[position] ) ) {
+            return position;
+        }
+
+        // A UTF-8 character is at most 4 bytes long: look for its first byte among the preceding bytes.
+        for ( size_t length = 1; length < 4 && length <= position; ++length ) {
+            const size_t characterBegin = position - length;
+            if ( isContinuationByte( data[characterBegin] ) ) {
+                continue;
+            }
+
+            uint32_t character = 0;
+            if ( static_cast<size_t>( decodeUtf8Character( data + characterBegin, data + text.size(), character ) ) > length ) {
+                return characterBegin;
+            }
+
+            break;
+        }
+
+        return position;
+    }
 }

@@ -30,7 +30,9 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 #include "math_base.h"
 #include "timing.h"
@@ -181,6 +183,15 @@ namespace fheroes2
     const char * KeySymGetName( const Key key );
 
     size_t InsertKeySym( std::string & res, size_t pos, const Key key, const int32_t mod );
+
+    // The UTF-8 encoded text version of InsertKeySym(): it moves the cursor and deletes characters by whole UTF-8 characters.
+    // Printable characters are inserted only if `insertPrintableCharacters` is true. Otherwise they are expected to come
+    // from the system text input (see LocalEvent::getTextInput()).
+    size_t processUtf8TextEditingKey( std::string & res, size_t pos, const Key key, const bool insertPrintableCharacters );
+
+    // Inserts UTF-8 encoded text at the given position and returns the position after it. Characters which do not fit
+    // the length limit in bytes are not inserted. Zero length limit means no limit.
+    size_t insertUtf8Text( std::string & res, size_t pos, std::string_view text, const size_t lengthLimit );
 }
 
 class LocalEvent final
@@ -332,6 +343,31 @@ public:
         return _currentKeyboardValue;
     }
 
+    // Starts receiving text input events, including input method composition, for a text input field located in the given area.
+    // Input methods show their candidate window next to this area. Every call must be followed by a stopTextInput() call
+    // which restores the text input of the previous text input field, if any.
+    // Returns false if the system text input is not used on this platform.
+    bool startTextInput( const fheroes2::Rect & inputArea );
+    void stopTextInput();
+
+    // Returns true if text has been entered or input method composition has been changed during the last event processing.
+    bool isTextInputEvent() const
+    {
+        return ( _actionStates & TEXT_INPUT ) == TEXT_INPUT;
+    }
+
+    // Returns UTF-8 encoded text entered during the last event processing.
+    const std::string & getTextInput() const
+    {
+        return _textInput;
+    }
+
+    // Returns UTF-8 encoded text which is being composed by an input method. It is not a part of the entered text yet.
+    const std::string & getTextComposition() const
+    {
+        return _textComposition;
+    }
+
     void initController();
     void CloseController();
 
@@ -444,6 +480,8 @@ private:
         KEY_HOLD = ( 1 << 6 ),
         // Some UI component registered the start of drag motion
         DRAG_ONGOING = ( 1 << 7 ),
+        // Text has been entered or input method composition has been changed
+        TEXT_INPUT = ( 1 << 8 ),
     };
 
     enum : int16_t
@@ -505,6 +543,11 @@ private:
 
     fheroes2::Rect _mouseCursorRenderArea;
 
+    std::string _textInput;
+    std::string _textComposition;
+    // Areas of text input fields which have started text input. The last one belongs to the currently active field.
+    std::vector<fheroes2::Rect> _textInputAreas;
+
     // used to convert user-friendly pointer speed values into more usable ones
     const double _controllerSpeedModifier{ 2000000.0 };
     double _controllerPointerSpeed{ 10.0 / _controllerSpeedModifier };
@@ -538,6 +581,8 @@ private:
     void onMouseMotionEvent( fheroes2::Point position );
     void onMouseButtonEvent( const bool isPressed, const MouseButtonType buttonType, fheroes2::Point position );
     void onKeyboardEvent( const fheroes2::Key key, const int32_t keyModifier, const KeyboardEventState keyState );
+    void onTextInputEvent( const char * text );
+    void onTextEditingEvent( const char * text );
     void onMouseWheelEvent( fheroes2::Point position );
     void onControllerAxisEvent( const ControllerAxisType axisType, const int16_t value );
     void onControllerButtonEvent( const bool isPressed, const ControllerButtonType buttonType );

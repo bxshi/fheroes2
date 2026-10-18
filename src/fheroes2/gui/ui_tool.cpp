@@ -46,6 +46,7 @@
 #include "system.h"
 #include "tools.h"
 #include "translations.h"
+#include "ui_language.h"
 #include "ui_text.h"
 
 namespace
@@ -218,6 +219,34 @@ namespace fheroes2
         // Do nothing.
     }
 
+    TextInputField::~TextInputField()
+    {
+        if ( _isSystemTextInputStarted ) {
+            LocalEvent::Get().stopTextInput();
+        }
+    }
+
+    bool TextInputField::startSystemTextInput()
+    {
+        if ( _isSystemTextInputStarted ) {
+            return true;
+        }
+
+        if ( !isUtf8Text() ) {
+            return false;
+        }
+
+        _isSystemTextInputStarted = LocalEvent::Get().startTextInput( _textInputArea );
+
+        return _isSystemTextInputStarted;
+    }
+
+    bool TextInputField::isUtf8Text() const
+    {
+        const std::optional<SupportedLanguage> & language = _text.getLanguage();
+        return getCodePage( language ? *language : getCurrentLanguage() ) == CodePage::UTF8;
+    }
+
     bool TextInputField::eventProcessing()
     {
         if ( !Game::validateAnimationDelay( Game::DelayType::CURSOR_BLINK_DELAY ) ) {
@@ -239,7 +268,21 @@ namespace fheroes2
         _cursor.hide();
         _background.restore();
 
-        _text.set( newText, cursorPositionInText );
+        _compositionPosition = static_cast<size_t>( cursorPositionInText );
+        _compositionLength = 0;
+
+        const std::string & composition = LocalEvent::Get().getTextComposition();
+        if ( _isSystemTextInputStarted && !composition.empty() ) {
+            // Show the input method composition at the cursor position without adding it to the text.
+            std::string text = newText;
+            text.insert( _compositionPosition, composition );
+            _compositionLength = composition.size();
+
+            _text.set( std::move( text ), cursorPositionInText + static_cast<int32_t>( _compositionLength ) );
+        }
+        else {
+            _text.set( newText, cursorPositionInText );
+        }
 
         // Multi-line text is currently always automatically center-aligned.
         const int32_t offsetX = _isSingleLineTextCenterAligned ? _textInputArea.x + ( _textInputArea.width - _text.width() ) / 2 : _textInputArea.x;
@@ -251,6 +294,17 @@ namespace fheroes2
         _cursor.show();
 
         Game::AnimateResetDelay( Game::DelayType::CURSOR_BLINK_DELAY );
+    }
+
+    size_t TextInputField::getCursorInTextPosition( const Point & pos ) const
+    {
+        const size_t position = _text.getCursorPosition( pos, _textInputArea, _isSingleLineTextCenterAligned );
+        if ( position <= _compositionPosition ) {
+            return position;
+        }
+
+        // Exclude the input method composition from the position.
+        return ( position < _compositionPosition + _compositionLength ) ? _compositionPosition : position - _compositionLength;
     }
 
     SystemInfoRenderer::SystemInfoRenderer()

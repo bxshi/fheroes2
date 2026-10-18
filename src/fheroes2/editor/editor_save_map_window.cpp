@@ -293,6 +293,8 @@ namespace Editor
         listbox.Redraw();
 
         fheroes2::TextInputField textInput( fileNameRoi, false, false, display );
+        const bool isUtf8Text = textInput.isUtf8Text();
+        const bool isSystemTextInput = textInput.startSystemTextInput();
         textInput.draw( fileName + mapFileExtension, static_cast<int32_t>( charInsertPos ) );
 
         // Render a button to open the Virtual Keyboard window.
@@ -332,7 +334,12 @@ namespace Editor
             bool needFileNameRedraw = ( listId != listbox.getCurrentId() );
 
             if ( le.MouseClickLeft( buttonVirtualKB.area() ) || ( isInGameKeyboardRequired && le.MouseClickLeft( fileNameRoi ) ) ) {
-                {
+                if ( fheroes2::getCodePage( fheroes2::getCurrentLanguage() ) == fheroes2::CodePage::UTF8 ) {
+                    // UTF-8 encoded file name can be properly shown and edited only using the current language.
+                    // The virtual keyboard falls back to the English layout for such languages.
+                    fheroes2::openVirtualKeyboard( fileName, maxFileNameLength );
+                }
+                else {
                     // TODO: allow to use other languages once we add support of filesystem language support.
                     const fheroes2::LanguageSwitcher switcher( fheroes2::SupportedLanguage::English );
                     fheroes2::openVirtualKeyboard( fileName, maxFileNameLength );
@@ -414,7 +421,8 @@ namespace Editor
                 const fheroes2::Key pressedKey = le.getPressedKeyValue();
                 if ( ( fileName.size() < maxFileNameLength || pressedKey == fheroes2::Key::KEY_BACKSPACE || pressedKey == fheroes2::Key::KEY_DELETE )
                      && pressedKey != fheroes2::Key::KEY_UP && pressedKey != fheroes2::Key::KEY_DOWN ) {
-                    charInsertPos = InsertKeySym( fileName, charInsertPos, pressedKey, LocalEvent::getCurrentKeyModifiers() );
+                    charInsertPos = isUtf8Text ? fheroes2::processUtf8TextEditingKey( fileName, charInsertPos, pressedKey, !isSystemTextInput )
+                                               : InsertKeySym( fileName, charInsertPos, pressedKey, LocalEvent::getCurrentKeyModifiers() );
 
                     buttonOkDisabler();
 
@@ -422,6 +430,15 @@ namespace Editor
                     isListboxSelected = false;
                     needFileNameRedraw = true;
                 }
+            }
+            else if ( isSystemTextInput && le.isTextInputEvent() ) {
+                charInsertPos = fheroes2::insertUtf8Text( fileName, charInsertPos, le.getTextInput(), maxFileNameLength );
+
+                buttonOkDisabler();
+
+                listbox.Unselect();
+                isListboxSelected = false;
+                needFileNameRedraw = true;
             }
 
             if ( le.isMouseRightButtonPressedInArea( buttonCancel.area() ) ) {
