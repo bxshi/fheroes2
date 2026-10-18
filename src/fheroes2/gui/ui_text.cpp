@@ -56,6 +56,112 @@ namespace
         return ( character == ' ' );
     }
 
+    // Returns true if the character belongs to scripts which do not separate words by spaces (Chinese and Japanese)
+    // so a line can be broken before and after any such character.
+    bool isCjkCharacter( const uint32_t character )
+    {
+        return ( character >= 0x2E80 && character <= 0x9FFF ) // CJK radicals, symbols and punctuation, kana, Bopomofo and ideographs.
+               || ( character >= 0xF900 && character <= 0xFAFF ) // CJK compatibility ideographs.
+               || ( character >= 0xFE30 && character <= 0xFE4F ) // CJK compatibility forms.
+               || ( character >= 0xFF00 && character <= 0xFFEF ) // Fullwidth and halfwidth forms.
+               || ( character >= 0x20000 && character <= 0x3FFFF ); // CJK ideographs extensions.
+    }
+
+    // Returns true if the character must not be placed at the beginning of a line, like closing brackets and punctuation marks.
+    bool isLineStartProhibited( const uint32_t character )
+    {
+        switch ( character ) {
+        case '!':
+        case ')':
+        case ',':
+        case '.':
+        case ':':
+        case ';':
+        case '?':
+        case ']':
+        case '}':
+        case 0x2019: // Right single quotation mark.
+        case 0x201D: // Right double quotation mark.
+        case 0x2025: // Two dot leader.
+        case 0x2026: // Horizontal ellipsis.
+        case 0x3001: // Ideographic comma.
+        case 0x3002: // Ideographic full stop.
+        case 0x3009: // Right angle bracket.
+        case 0x300B: // Right double angle bracket.
+        case 0x300D: // Right corner bracket.
+        case 0x300F: // Right white corner bracket.
+        case 0x3011: // Right black lenticular bracket.
+        case 0x3015: // Right tortoise shell bracket.
+        case 0x3017: // Right white lenticular bracket.
+        case 0x3019: // Right white tortoise shell bracket.
+        case 0x301B: // Right white square bracket.
+        case 0x30FC: // Katakana-hiragana prolonged sound mark.
+        case 0xFF01: // Fullwidth exclamation mark.
+        case 0xFF05: // Fullwidth percent sign.
+        case 0xFF09: // Fullwidth right parenthesis.
+        case 0xFF0C: // Fullwidth comma.
+        case 0xFF0E: // Fullwidth full stop.
+        case 0xFF1A: // Fullwidth colon.
+        case 0xFF1B: // Fullwidth semicolon.
+        case 0xFF1F: // Fullwidth question mark.
+        case 0xFF3D: // Fullwidth right square bracket.
+        case 0xFF5D: // Fullwidth right curly bracket.
+        case 0xFF61: // Halfwidth ideographic full stop.
+        case 0xFF63: // Halfwidth right corner bracket.
+        case 0xFF64: // Halfwidth ideographic comma.
+            return true;
+        default:
+            break;
+        }
+
+        return false;
+    }
+
+    // Returns true if the character must not be placed at the end of a line, like opening brackets.
+    bool isLineEndProhibited( const uint32_t character )
+    {
+        switch ( character ) {
+        case '(':
+        case '[':
+        case '{':
+        case 0x2018: // Left single quotation mark.
+        case 0x201C: // Left double quotation mark.
+        case 0x3008: // Left angle bracket.
+        case 0x300A: // Left double angle bracket.
+        case 0x300C: // Left corner bracket.
+        case 0x300E: // Left white corner bracket.
+        case 0x3010: // Left black lenticular bracket.
+        case 0x3014: // Left tortoise shell bracket.
+        case 0x3016: // Left white lenticular bracket.
+        case 0x3018: // Left white tortoise shell bracket.
+        case 0x301A: // Left white square bracket.
+        case 0xFF08: // Fullwidth left parenthesis.
+        case 0xFF3B: // Fullwidth left square bracket.
+        case 0xFF5B: // Fullwidth left curly bracket.
+        case 0xFF62: // Halfwidth left corner bracket.
+            return true;
+        default:
+            break;
+        }
+
+        return false;
+    }
+
+    // Returns true if a line can be broken between two adjacent non-space characters. Spaces are handled separately.
+    bool isLineBreakAllowed( const uint32_t previousCharacter, const uint32_t character )
+    {
+        if ( previousCharacter == 0 || isSpaceChar( previousCharacter ) || isSpaceChar( character ) || isLineSeparator( previousCharacter )
+             || isLineSeparator( character ) ) {
+            return false;
+        }
+
+        if ( !isCjkCharacter( previousCharacter ) && !isCjkCharacter( character ) ) {
+            return false;
+        }
+
+        return !isLineStartProhibited( character ) && !isLineEndProhibited( previousCharacter );
+    }
+
     const fheroes2::Sprite errorImage;
 
     const fheroes2::Sprite & getChar( const uint32_t character, const fheroes2::FontType & fontType )
@@ -306,9 +412,18 @@ namespace
 
         const uint8_t * dataEnd = data + size;
         uint32_t character = 0;
+        uint32_t previousCharacter = 0;
 
         while ( data != dataEnd ) {
             data += charHandler.readCharacter( data, dataEnd, character );
+
+            if ( isLineBreakAllowed( previousCharacter, character ) ) {
+                // The previous word has ended and a new one begins with this character.
+                maxWidth = std::max( maxWidth, width );
+                width = 0;
+            }
+
+            previousCharacter = character;
 
             if ( isSpaceChar( character ) || isLineSeparator( character ) ) {
                 // If it is the end of line ("\n") or a space (" "), then the word has ended.
@@ -617,6 +732,9 @@ namespace fheroes2
 
         const uint8_t * dataEnd = data + _text.size();
 
+        // The last character added to the current line.
+        uint32_t previousCharacter = 0;
+
         while ( data != dataEnd ) {
             uint32_t character = 0;
             const int32_t characterLength = charHandler.readCharacter( data, dataEnd, character );
@@ -628,6 +746,7 @@ namespace fheroes2
 
                 textLineInfos.emplace_back( offsetX, offsetY, lineWidth, lineCharCount + characterLength );
 
+                previousCharacter = 0;
                 spaceCharCount = 0;
                 offsetX = 0;
                 offsetY += rowHeight;
@@ -653,6 +772,9 @@ namespace fheroes2
 
                         // Skip this space character.
                         data += characterLength;
+                    }
+                    else if ( isLineBreakAllowed( previousCharacter, character ) ) {
+                        // The line can be broken right before the current character, so it starts the next line.
                     }
                     else if ( lineCharCount == lastWordCharCount ) {
                         // This is the only word in the line.
@@ -700,6 +822,7 @@ namespace fheroes2
 
                     textLineInfos.emplace_back( offsetX, offsetY, lineWidth, lineCharCount );
 
+                    previousCharacter = 0;
                     spaceCharCount = 0;
                     offsetX = 0;
                     offsetY += rowHeight;
@@ -713,10 +836,16 @@ namespace fheroes2
                         ++spaceCharCount;
                     }
                     else {
+                        if ( isLineBreakAllowed( previousCharacter, character ) ) {
+                            // A new word begins with this character.
+                            lastWordCharCount = 0;
+                        }
+
                         lastWordCharCount += characterLength;
                         spaceCharCount = 0;
                     }
 
+                    previousCharacter = character;
                     data += characterLength;
                     lineCharCount += characterLength;
                     lineWidth += charWidth;
