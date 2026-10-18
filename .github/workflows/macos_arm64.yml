@@ -1,0 +1,61 @@
+name: macOS ARM64
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  make:
+    name: Make (macOS ARM64 SDL2)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install dependencies
+      run: |
+        brew install sdl2 sdl2_mixer sdl2_image
+      env:
+        # Do not update outdated dependencies of installed packages
+        HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: ON
+    - name: Build
+      run: |
+        make -j "$(sysctl -n hw.logicalcpu)"
+      env:
+        CFLAGS: --target=arm64-apple-macos11
+        CXXFLAGS: --target=arm64-apple-macos11
+        LDFLAGS: --target=arm64-apple-macos11
+        FHEROES2_STRICT_COMPILATION: ON
+        FHEROES2_WITH_IMAGE: ON
+    - name: Verify architecture
+      run: |
+        file fheroes2
+        lipo -archs fheroes2 | grep -qx arm64
+    - name: Create package
+      run: |
+        7z a -bb1 -tzip -- fheroes2_macos_arm64_SDL2.zip \
+            LICENSE \
+            changelog.txt \
+            fheroes2 \
+            ./docs/README.txt \
+            files/data/*.h2d \
+            files/lang/*.mo \
+            maps/*.fh2m \
+            ./script/demo/download_demo_version.sh \
+            ./script/homm2/extract_homm2_resources.sh \
+            script/macos/Brewfile
+    - uses: actions/upload-artifact@v7
+      with:
+        name: fheroes2_macos_arm64_SDL2.zip
+        path: fheroes2_macos_arm64_SDL2.zip
+        archive: false
+        if-no-files-found: error
