@@ -338,6 +338,11 @@ bool Maps::FileInfo::readMP2Map( std::string filePath, const bool isForEditor )
     fs.seek( 118 );
     description = fs.getString( mapDescriptionLength );
 
+    if ( fheroes2::getCurrentLanguage() == fheroes2::SupportedLanguage::TraditionalChinese ) {
+        fheroes2::convertBig5MP2MapText( name );
+        fheroes2::convertBig5MP2MapText( description );
+    }
+
     // Alliances of kingdoms
     if ( victoryConditionType == VICTORY_DEFEAT_OTHER_SIDE && !skipUnionSetup ) {
         PlayerColorsSet side1 = 0;

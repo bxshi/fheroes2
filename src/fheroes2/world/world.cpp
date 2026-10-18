@@ -62,7 +62,6 @@
 #include "settings.h"
 #include "tools.h"
 #include "translations.h"
-#include "ui_font.h"
 #include "week.h"
 #include "world_object_uid.h"
 
@@ -1276,19 +1275,19 @@ bool World::isAnyKingdomVisited( const MP2::MapObjectType objectType, const int3
                         [this, objectType, dstIndex]( const PlayerColor color ) { return GetKingdom( color ).isVisited( dstIndex, objectType ); } );
 }
 
-void World::fixFrenchCharactersInStrings()
+void World::convertMapStrings( void ( *convert )( std::string & ) )
 {
     for ( Heroes * hero : vec_heroes ) {
-        hero->fixFrenchCharactersInName();
+        hero->convertName( convert );
     }
     for ( Castle * castle : vec_castles ) {
-        castle->fixFrenchCharactersInName();
+        castle->convertName( convert );
     }
     for ( std::string & str : _customRumors ) {
-        fheroes2::fixFrenchCharactersForMP2Map( str );
+        convert( str );
     }
     for ( EventDate & event : vec_eventsday ) {
-        fheroes2::fixFrenchCharactersForMP2Map( event.message );
+        convert( event.message );
     }
 
     for ( const auto & tile : vec_tiles ) {
@@ -1297,14 +1296,14 @@ void World::fixFrenchCharactersInStrings()
         case MP2::OBJ_BOTTLE: {
             MapSign * sign = dynamic_cast<MapSign *>( map_objects.get( tile.GetIndex() ) );
             if ( sign != nullptr ) {
-                fheroes2::fixFrenchCharactersForMP2Map( sign->message.text );
+                convert( sign->message.text );
             }
             break;
         }
         case MP2::OBJ_EVENT: {
             MapEvent * event = dynamic_cast<MapEvent *>( map_objects.get( tile.GetIndex() ) );
             if ( event != nullptr ) {
-                fheroes2::fixFrenchCharactersForMP2Map( event->message );
+                convert( event->message );
             }
             break;
         }
@@ -1312,9 +1311,9 @@ void World::fixFrenchCharactersInStrings()
             MapSphinx * sphinx = dynamic_cast<MapSphinx *>( map_objects.get( tile.GetIndex() ) );
             if ( sphinx != nullptr ) {
                 for ( std::string & text : sphinx->answers ) {
-                    fheroes2::fixFrenchCharactersForMP2Map( text );
+                    convert( text );
                 }
-                fheroes2::fixFrenchCharactersForMP2Map( sphinx->riddle );
+                convert( sphinx->riddle );
             }
             break;
         }

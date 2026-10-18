@@ -379,9 +379,8 @@ public:
         return ( _disabledBuildings & buildingType ) != 0;
     }
 
-    // Update French language-specific characters to match CP1252.
-    // Call this method only when loading maps made with original French editor.
-    void fixFrenchCharactersInName();
+    // Converts the name using the given function. Call this method only to convert texts of original maps to the encoding used by the engine.
+    void convertName( void ( *convert )( std::string & ) );
 
 private:
     enum class ConstructionDialogResult : int

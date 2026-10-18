@@ -73,4 +73,8 @@ namespace fheroes2
     // This function replaces the special ASCII characters with the language-specific characters from CP1252
     // to properly display texts for maps from French assets.
     void fixFrenchCharactersForMP2Map( std::string & str );
+
+    // Maps made for Traditional Chinese with the original editor store texts in Big5 encoding.
+    // This function converts such texts to UTF-8 used by the engine. A text which is already valid UTF-8 or is not valid Big5 is not changed.
+    void convertBig5MP2MapText( std::string & str );
 }

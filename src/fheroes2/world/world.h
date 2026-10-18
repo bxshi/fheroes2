@@ -517,9 +517,9 @@ public:
         return _allEyeOfMagi;
     }
 
-    // Update French language-specific characters in all strings to match CP1252.
-    // Call this method only when loading maps made with original French editor.
-    void fixFrenchCharactersInStrings();
+    // Converts all texts which come from the map using the given function. Call this method only to convert texts
+    // of original maps to the encoding used by the engine, for example, French language-specific characters to CP1252.
+    void convertMapStrings( void ( *convert )( std::string & ) );
 
 private:
     World() = default;

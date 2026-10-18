@@ -298,7 +298,7 @@ fheroes2::GameMode Game::Load( const std::string & filePath )
         fheroes2::fixFrenchCharactersForMP2Map( header.info.name );
         fheroes2::fixFrenchCharactersForMP2Map( header.info.description );
 
-        world.fixFrenchCharactersInStrings();
+        world.convertMapStrings( fheroes2::fixFrenchCharactersForMP2Map );
     }
 
     return returnValue;

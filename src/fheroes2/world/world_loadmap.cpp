@@ -68,6 +68,7 @@
 #include "settings.h"
 #include "skill.h"
 #include "spell.h"
+#include "ui_font.h"
 #include "ui_language.h"
 #include "world.h" // IWYU pragma: associated
 #include "world_object_uid.h"
@@ -690,7 +691,10 @@ bool World::LoadMapMP2( const std::string & filename, const bool isOriginalMp2Fi
     // For the original French version we update the language-specific characters
     // to match CP1252 only if the French language is selected.
     if ( fheroes2::getCurrentLanguage() == fheroes2::SupportedLanguage::French && fheroes2::getResourceLanguage() == fheroes2::SupportedLanguage::French ) {
-        fixFrenchCharactersInStrings();
+        convertMapStrings( fheroes2::fixFrenchCharactersForMP2Map );
+    }
+    else if ( fheroes2::getCurrentLanguage() == fheroes2::SupportedLanguage::TraditionalChinese ) {
+        convertMapStrings( fheroes2::convertBig5MP2MapText );
     }
 
     // If this assertion blows up it means that we are not reading the data properly from the file.

@@ -26,7 +26,10 @@
 #include <cstdint>
 #include <cstdlib>
 #include <initializer_list>
+#include <string>
+#include <utility>
 
+#include "encoding.h"
 #include "game_language.h"
 #include "icn.h"
 #include "image.h"
@@ -35,6 +38,7 @@
 #include "settings.h"
 #include "ui_language.h"
 #include "ui_text.h"
+#include "utf8.h"
 
 namespace
 {
@@ -7391,6 +7395,21 @@ namespace fheroes2
             default:
                 break;
             }
+        }
+    }
+
+    void convertBig5MP2MapText( std::string & str )
+    {
+        if ( isValidUtf8( str ) ) {
+            return;
+        }
+
+        std::string converted = Encoding::big5ToUtf8( str );
+
+        // Invalid Big5 characters are replaced by '?'. In this case the text most likely uses another encoding
+        // (for example, it is a map for another language) so we keep it as is.
+        if ( std::count( converted.begin(), converted.end(), '?' ) == std::count( str.begin(), str.end(), '?' ) ) {
+            str = std::move( converted );
         }
     }
 }

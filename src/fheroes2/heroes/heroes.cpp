@@ -76,7 +76,6 @@
 #include "tools.h"
 #include "translations.h"
 #include "ui_dialog.h"
-#include "ui_font.h"
 #include "world.h"
 
 namespace
@@ -2485,9 +2484,9 @@ Heroes * AllHeroes::FromJail( const int32_t tileIndex ) const
     return nullptr;
 }
 
-void Heroes::fixFrenchCharactersInName()
+void Heroes::convertName( void ( *convert )( std::string & ) )
 {
-    fheroes2::fixFrenchCharactersForMP2Map( _name );
+    convert( _name );
 }
 
 OStreamBase & operator<<( OStreamBase & stream, const VecHeroes & heroes )
