@@ -26,6 +26,7 @@
     <ClCompile Include="src\engine\tinyconfig.cpp" />
     <ClCompile Include="src\engine\tools.cpp" />
     <ClCompile Include="src\engine\translations.cpp" />
+    <ClCompile Include="src\engine\utf8.cpp" />
     <ClCompile Include="src\engine\zzlib.cpp" />
     <ClCompile Include="src\fheroes2\agg\agg.cpp" />
     <ClCompile Include="src\fheroes2\agg\bin_info.cpp" />
@@ -280,6 +281,7 @@
     <ClInclude Include="src\engine\tinyconfig.h" />
     <ClInclude Include="src\engine\tools.h" />
     <ClInclude Include="src\engine\translations.h" />
+    <ClInclude Include="src\engine\utf8.h" />
     <ClInclude Include="src\engine\zzlib.h" />
     <ClInclude Include="src\fheroes2\agg\agg.h" />
     <ClInclude Include="src\fheroes2\agg\bin_info.h" />

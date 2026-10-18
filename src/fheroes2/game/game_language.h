@@ -65,5 +65,7 @@ namespace fheroes2
         CP1258,
         ISO8859_16,
         ISO8859_3,
+        // Characters beyond ASCII are not a part of the game fonts and are rendered from a separate glyph set.
+        UTF8,
     };
 }

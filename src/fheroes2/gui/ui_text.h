@@ -393,6 +393,12 @@ namespace fheroes2
         // Returns the number of bytes occupied by the character which ends right before the given position.
         int32_t getPreviousCharacterLength( const uint8_t * dataBegin, const uint8_t * data ) const;
 
+        // Returns true if the byte cannot start a character, i.e. it is a continuation of a multi-byte character.
+        bool isContinuationByte( const uint8_t value ) const
+        {
+            return _isUtf8 && ( value & 0xC0 ) == 0x80;
+        }
+
         // Returns true if character is available to render, including space (' ') and new line ('\n').
         bool isAvailable( const uint32_t character ) const;
 
@@ -410,7 +416,8 @@ namespace fheroes2
         // Returns true if character is valid for the current code page, excluding space (' ') and new line ('\n').
         bool _isValid( const uint32_t character ) const
         {
-            return character >= 0x21 && character <= _charLimit;
+            // With UTF-8 encoding only ASCII characters are taken from the game fonts.
+            return character >= 0x21 && character <= _charLimit && ( !_isUtf8 || character < 0x80 );
         }
 
         int32_t _getSpaceCharWidth() const;
@@ -418,6 +425,7 @@ namespace fheroes2
         const FontType _fontType;
         const uint32_t _charLimit;
         const int32_t _spaceCharWidth;
+        const bool _isUtf8;
     };
 
     // This function is usually useful for text generation on buttons as button font is a separate set of sprites.

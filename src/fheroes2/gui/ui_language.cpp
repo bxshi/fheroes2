@@ -312,7 +312,17 @@ namespace fheroes2
 
     SupportedLanguage getCurrentLanguage()
     {
-        return fheroes2::getLanguageFromAbbreviation( Settings::Get().getGameLanguage() );
+        // This function is called very often during text rendering so we avoid parsing the same language abbreviation again.
+        static std::string lastAbbreviation;
+        static SupportedLanguage lastLanguage{ SupportedLanguage::English };
+
+        const std::string & abbreviation = Settings::Get().getGameLanguage();
+        if ( abbreviation != lastAbbreviation ) {
+            lastLanguage = fheroes2::getLanguageFromAbbreviation( abbreviation );
+            lastAbbreviation = abbreviation;
+        }
+
+        return lastLanguage;
     }
 
     CodePage getCodePage( const SupportedLanguage language )

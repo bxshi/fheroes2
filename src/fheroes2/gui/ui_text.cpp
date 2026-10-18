@@ -31,6 +31,7 @@
 #include "game_assets.h"
 #include "icn.h"
 #include "ui_language.h"
+#include "utf8.h"
 
 namespace
 {
@@ -329,6 +330,16 @@ namespace
         return std::max( maxWidth, width );
     }
 
+    void removeLastCharacter( std::string & text, const fheroes2::FontCharHandler & charHandler )
+    {
+        if ( text.empty() ) {
+            return;
+        }
+
+        const uint8_t * data = reinterpret_cast<const uint8_t *>( text.data() );
+        text.resize( text.size() - charHandler.getPreviousCharacterLength( data, data + text.size() ) );
+    }
+
     std::unique_ptr<fheroes2::LanguageSwitcher> getLanguageSwitcher( const fheroes2::TextBase & text )
     {
         const auto & language = text.getLanguage();
@@ -561,18 +572,16 @@ namespace fheroes2
         }
 
         while ( !_text.empty() && ( height( maxWidth ) > maxHeight ) ) {
-            _text.pop_back();
+            removeLastCharacter( _text, charHandler );
         }
 
         // We need to add truncation symbol.
         _text += truncationSymbol;
         while ( height( maxWidth ) > maxHeight ) {
             // Remove the truncation symbol and one more character before it.
-            for ( size_t i = 0; i < truncationSymbol.size(); ++i ) {
-                _text.pop_back();
-            }
+            _text.resize( _text.size() - truncationSymbol.size() );
 
-            _text.pop_back();
+            removeLastCharacter( _text, charHandler );
 
             _text += truncationSymbol;
         }
@@ -787,6 +796,8 @@ namespace fheroes2
 
     size_t TextInput::getCursorPositionInAdjacentLine( const size_t currentPos, const int32_t maxWidth, const bool moveUp )
     {
+        const auto languageSwitcher = getLanguageSwitcher( *this );
+
         std::vector<TextLineInfo> tempLineInfos;
         _getTextLineInfos( tempLineInfos, maxWidth, height(), true );
         if ( tempLineInfos.empty() ) {
@@ -885,6 +896,11 @@ namespace fheroes2
         _visibleTextBeginPos
             = ( _cursorPositionInText > cursorToTruncationDistance ) ? std::min( _visibleTextBeginPos, _cursorPositionInText - cursorToTruncationDistance ) : 0;
 
+        // The begin position must not point to the middle of a multi-byte character.
+        while ( _visibleTextBeginPos > 0 && charHandler.isContinuationByte( textData[_visibleTextBeginPos] ) ) {
+            --_visibleTextBeginPos;
+        }
+
         assert( _visibleTextBeginPos <= _visibleTextLength );
 
         _visibleTextLength -= _visibleTextBeginPos;
@@ -973,6 +989,8 @@ namespace fheroes2
             return 0;
         }
 
+        const auto languageSwitcher = getLanguageSwitcher( *this );
+
         const int32_t fontHeight = getFontHeight( _fontType.size );
         const int32_t pointerLine = ( cursorOffset.y - roi.y ) / fontHeight;
 
@@ -1037,6 +1055,8 @@ namespace fheroes2
         if ( _text.empty() ) {
             return 0;
         }
+
+        const auto languageSwitcher = getLanguageSwitcher( *this );
 
         const int32_t textStartOffsetX
             = roi.x + ( isCenterAligned ? ( roi.width - width() ) / 2 : 0 ) + ( _visibleTextBeginPos == 0 ? 0 : getTruncationSymbolWidth( _fontType ) );
@@ -1384,21 +1404,30 @@ namespace fheroes2
         : _fontType( fontType )
         , _charLimit( getCharacterLimit( fontType.size ) )
         , _spaceCharWidth( _getSpaceCharWidth() )
+        , _isUtf8( getCodePage( getCurrentLanguage() ) == CodePage::UTF8 )
     {
         // Do nothing.
     }
 
-    int32_t FontCharHandler::readCharacter( const uint8_t * data, [[maybe_unused]] const uint8_t * dataEnd, uint32_t & character ) const
+    int32_t FontCharHandler::readCharacter( const uint8_t * data, const uint8_t * dataEnd, uint32_t & character ) const
     {
         assert( data != nullptr && data < dataEnd );
+
+        if ( _isUtf8 ) {
+            return decodeUtf8Character( data, dataEnd, character );
+        }
 
         character = *data;
         return 1;
     }
 
-    int32_t FontCharHandler::getPreviousCharacterLength( [[maybe_unused]] const uint8_t * dataBegin, [[maybe_unused]] const uint8_t * data ) const
+    int32_t FontCharHandler::getPreviousCharacterLength( const uint8_t * dataBegin, const uint8_t * data ) const
     {
         assert( dataBegin != nullptr && dataBegin < data );
+
+        if ( _isUtf8 ) {
+            return getPreviousUtf8CharacterLength( dataBegin, data );
+        }
 
         return 1;
     }
