@@ -65,9 +65,12 @@ namespace
     };
 
     // Returns the name of the H2D archive with glyphs for the language or an empty string if the language does not need it.
-    std::string getFontArchiveName( [[maybe_unused]] const fheroes2::SupportedLanguage language )
+    std::string getFontArchiveName( const fheroes2::SupportedLanguage language )
     {
-        // There are no languages using UTF-8 encoding yet.
+        if ( language == fheroes2::SupportedLanguage::TraditionalChinese ) {
+            return "zh_hant_font.h2d";
+        }
+
         return {};
     }
 

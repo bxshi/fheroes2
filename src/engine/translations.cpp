@@ -168,7 +168,8 @@ namespace
         LOCALE_SV,
         LOCALE_TR,
         LOCALE_UK,
-        LOCALE_VI
+        LOCALE_VI,
+        LOCALE_ZH_TW
     };
 
     LocaleType langToLocale( const std::string_view langName )
@@ -286,7 +287,10 @@ namespace
                                                                                   { "ukrainian", LocaleType::LOCALE_UK },
                                                                                   // Vietnamese
                                                                                   { "vi", LocaleType::LOCALE_VI },
-                                                                                  { "vietnamese", LocaleType::LOCALE_VI } };
+                                                                                  { "vietnamese", LocaleType::LOCALE_VI },
+                                                                                  // Traditional Chinese
+                                                                                  { "zh_TW", LocaleType::LOCALE_ZH_TW },
+                                                                                  { "traditional chinese", LocaleType::LOCALE_ZH_TW } };
 
         const auto iter = langLocale.find( langName );
         if ( iter == langLocale.end() ) {
@@ -682,6 +686,9 @@ const char * Translation::ngettext( const char * str, const char * plural, const
         case LocaleType::LOCALE_BE:
         case LocaleType::LOCALE_UK:
             return current->ngettext( str, ( n % 10 == 1 && n % 100 != 11 ? 0 : n % 10 >= 2 && n % 10 <= 4 && ( n % 100 < 12 || n % 100 > 14 ) ? 1 : 2 ) );
+        case LocaleType::LOCALE_ZH_TW:
+            // Chinese has only one plural form.
+            return current->ngettext( str, 0 );
         default:
             break;
         }

@@ -47,29 +47,52 @@ namespace
                                                                             { 0x1CEBD099, fheroes2::SupportedLanguage::Czech } }; // CD Projekt
 
     // Strings in this map must in lower case and non translatable.
-    const std::map<std::string, fheroes2::SupportedLanguage, std::less<>> languageName
-        = { { "pl", fheroes2::SupportedLanguage::Polish },     { "polish", fheroes2::SupportedLanguage::Polish },
-            { "de", fheroes2::SupportedLanguage::German },     { "german", fheroes2::SupportedLanguage::German },
-            { "fr", fheroes2::SupportedLanguage::French },     { "french", fheroes2::SupportedLanguage::French },
-            { "ru", fheroes2::SupportedLanguage::Russian },    { "russian", fheroes2::SupportedLanguage::Russian },
-            { "it", fheroes2::SupportedLanguage::Italian },    { "italian", fheroes2::SupportedLanguage::Italian },
-            { "cs", fheroes2::SupportedLanguage::Czech },      { "czech", fheroes2::SupportedLanguage::Czech },
-            { "nb", fheroes2::SupportedLanguage::Norwegian },  { "norwegian", fheroes2::SupportedLanguage::Norwegian },
-            { "be", fheroes2::SupportedLanguage::Belarusian }, { "belarusian", fheroes2::SupportedLanguage::Belarusian },
-            { "uk", fheroes2::SupportedLanguage::Ukrainian },  { "ukrainian", fheroes2::SupportedLanguage::Ukrainian },
-            { "bg", fheroes2::SupportedLanguage::Bulgarian },  { "bulgarian", fheroes2::SupportedLanguage::Bulgarian },
-            { "es", fheroes2::SupportedLanguage::Spanish },    { "spanish", fheroes2::SupportedLanguage::Spanish },
-            { "pt", fheroes2::SupportedLanguage::Portuguese }, { "portuguese", fheroes2::SupportedLanguage::Portuguese },
-            { "sv", fheroes2::SupportedLanguage::Swedish },    { "swedish", fheroes2::SupportedLanguage::Swedish },
-            { "tr", fheroes2::SupportedLanguage::Turkish },    { "turkish", fheroes2::SupportedLanguage::Turkish },
-            { "ro", fheroes2::SupportedLanguage::Romanian },   { "romanian", fheroes2::SupportedLanguage::Romanian },
-            { "nl", fheroes2::SupportedLanguage::Dutch },      { "dutch", fheroes2::SupportedLanguage::Dutch },
-            { "hu", fheroes2::SupportedLanguage::Hungarian },  { "hungarian", fheroes2::SupportedLanguage::Hungarian },
-            { "da", fheroes2::SupportedLanguage::Danish },     { "danish", fheroes2::SupportedLanguage::Danish },
-            { "sk", fheroes2::SupportedLanguage::Slovak },     { "slovak", fheroes2::SupportedLanguage::Slovak },
-            { "vi", fheroes2::SupportedLanguage::Vietnamese }, { "vietnamese", fheroes2::SupportedLanguage::Vietnamese },
-            { "el", fheroes2::SupportedLanguage::Greek },      { "greek", fheroes2::SupportedLanguage::Greek },
-            { "eo", fheroes2::SupportedLanguage::Esperanto },  { "esperanto", fheroes2::SupportedLanguage::Esperanto } };
+    const std::map<std::string, fheroes2::SupportedLanguage, std::less<>> languageName = { { "pl", fheroes2::SupportedLanguage::Polish },
+                                                                                           { "polish", fheroes2::SupportedLanguage::Polish },
+                                                                                           { "de", fheroes2::SupportedLanguage::German },
+                                                                                           { "german", fheroes2::SupportedLanguage::German },
+                                                                                           { "fr", fheroes2::SupportedLanguage::French },
+                                                                                           { "french", fheroes2::SupportedLanguage::French },
+                                                                                           { "ru", fheroes2::SupportedLanguage::Russian },
+                                                                                           { "russian", fheroes2::SupportedLanguage::Russian },
+                                                                                           { "it", fheroes2::SupportedLanguage::Italian },
+                                                                                           { "italian", fheroes2::SupportedLanguage::Italian },
+                                                                                           { "cs", fheroes2::SupportedLanguage::Czech },
+                                                                                           { "czech", fheroes2::SupportedLanguage::Czech },
+                                                                                           { "nb", fheroes2::SupportedLanguage::Norwegian },
+                                                                                           { "norwegian", fheroes2::SupportedLanguage::Norwegian },
+                                                                                           { "be", fheroes2::SupportedLanguage::Belarusian },
+                                                                                           { "belarusian", fheroes2::SupportedLanguage::Belarusian },
+                                                                                           { "uk", fheroes2::SupportedLanguage::Ukrainian },
+                                                                                           { "ukrainian", fheroes2::SupportedLanguage::Ukrainian },
+                                                                                           { "bg", fheroes2::SupportedLanguage::Bulgarian },
+                                                                                           { "bulgarian", fheroes2::SupportedLanguage::Bulgarian },
+                                                                                           { "es", fheroes2::SupportedLanguage::Spanish },
+                                                                                           { "spanish", fheroes2::SupportedLanguage::Spanish },
+                                                                                           { "pt", fheroes2::SupportedLanguage::Portuguese },
+                                                                                           { "portuguese", fheroes2::SupportedLanguage::Portuguese },
+                                                                                           { "sv", fheroes2::SupportedLanguage::Swedish },
+                                                                                           { "swedish", fheroes2::SupportedLanguage::Swedish },
+                                                                                           { "tr", fheroes2::SupportedLanguage::Turkish },
+                                                                                           { "turkish", fheroes2::SupportedLanguage::Turkish },
+                                                                                           { "ro", fheroes2::SupportedLanguage::Romanian },
+                                                                                           { "romanian", fheroes2::SupportedLanguage::Romanian },
+                                                                                           { "nl", fheroes2::SupportedLanguage::Dutch },
+                                                                                           { "dutch", fheroes2::SupportedLanguage::Dutch },
+                                                                                           { "hu", fheroes2::SupportedLanguage::Hungarian },
+                                                                                           { "hungarian", fheroes2::SupportedLanguage::Hungarian },
+                                                                                           { "da", fheroes2::SupportedLanguage::Danish },
+                                                                                           { "danish", fheroes2::SupportedLanguage::Danish },
+                                                                                           { "sk", fheroes2::SupportedLanguage::Slovak },
+                                                                                           { "slovak", fheroes2::SupportedLanguage::Slovak },
+                                                                                           { "vi", fheroes2::SupportedLanguage::Vietnamese },
+                                                                                           { "vietnamese", fheroes2::SupportedLanguage::Vietnamese },
+                                                                                           { "zh_tw", fheroes2::SupportedLanguage::TraditionalChinese },
+                                                                                           { "traditional chinese", fheroes2::SupportedLanguage::TraditionalChinese },
+                                                                                           { "el", fheroes2::SupportedLanguage::Greek },
+                                                                                           { "greek", fheroes2::SupportedLanguage::Greek },
+                                                                                           { "eo", fheroes2::SupportedLanguage::Esperanto },
+                                                                                           { "esperanto", fheroes2::SupportedLanguage::Esperanto } };
 }
 
 namespace fheroes2
@@ -121,14 +144,29 @@ namespace fheroes2
             supportedLanguges[getCodePage( resourceLanguage )].emplace_back( resourceLanguage );
         }
 
-        const std::set<SupportedLanguage> possibleLanguages{ SupportedLanguage::French,     SupportedLanguage::Polish,     SupportedLanguage::German,
-                                                             SupportedLanguage::Russian,    SupportedLanguage::Italian,    SupportedLanguage::Norwegian,
-                                                             SupportedLanguage::Belarusian, SupportedLanguage::Bulgarian,  SupportedLanguage::Ukrainian,
-                                                             SupportedLanguage::Romanian,   SupportedLanguage::Spanish,    SupportedLanguage::Portuguese,
-                                                             SupportedLanguage::Swedish,    SupportedLanguage::Turkish,    SupportedLanguage::Dutch,
-                                                             SupportedLanguage::Hungarian,  SupportedLanguage::Czech,      SupportedLanguage::Danish,
-                                                             SupportedLanguage::Slovak,     SupportedLanguage::Vietnamese, SupportedLanguage::Greek,
-                                                             SupportedLanguage::Esperanto };
+        const std::set<SupportedLanguage> possibleLanguages{ SupportedLanguage::French,
+                                                             SupportedLanguage::Polish,
+                                                             SupportedLanguage::German,
+                                                             SupportedLanguage::Russian,
+                                                             SupportedLanguage::Italian,
+                                                             SupportedLanguage::Norwegian,
+                                                             SupportedLanguage::Belarusian,
+                                                             SupportedLanguage::Bulgarian,
+                                                             SupportedLanguage::Ukrainian,
+                                                             SupportedLanguage::Romanian,
+                                                             SupportedLanguage::Spanish,
+                                                             SupportedLanguage::Portuguese,
+                                                             SupportedLanguage::Swedish,
+                                                             SupportedLanguage::Turkish,
+                                                             SupportedLanguage::Dutch,
+                                                             SupportedLanguage::Hungarian,
+                                                             SupportedLanguage::Czech,
+                                                             SupportedLanguage::Danish,
+                                                             SupportedLanguage::Slovak,
+                                                             SupportedLanguage::Vietnamese,
+                                                             SupportedLanguage::Greek,
+                                                             SupportedLanguage::Esperanto,
+                                                             SupportedLanguage::TraditionalChinese };
 
         for ( const SupportedLanguage language : possibleLanguages ) {
             if ( language != resourceLanguage ) {
@@ -208,6 +246,8 @@ namespace fheroes2
             return _( "Greek" );
         case SupportedLanguage::Esperanto:
             return _( "Esperanto" );
+        case SupportedLanguage::TraditionalChinese:
+            return _( "Traditional Chinese" );
         default:
             // Did you add a new language? Please add the code to handle it.
             assert( 0 );
@@ -264,6 +304,8 @@ namespace fheroes2
             return "el";
         case SupportedLanguage::Esperanto:
             return "eo";
+        case SupportedLanguage::TraditionalChinese:
+            return "zh_TW";
         default:
             // Did you add a new language? Please add the code to handle it.
             assert( 0 );
@@ -360,6 +402,8 @@ namespace fheroes2
             return CodePage::ISO8859_16;
         case SupportedLanguage::Esperanto:
             return CodePage::ISO8859_3;
+        case SupportedLanguage::TraditionalChinese:
+            return CodePage::UTF8;
         default:
             // Add new language handling code!
             assert( 0 );
