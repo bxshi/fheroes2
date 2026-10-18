@@ -115,6 +115,7 @@ namespace fheroes2
         int32_t offsetX{ 0 };
         int32_t offsetY{ 0 };
         int32_t lineWidth{ 0 };
+        // The number of bytes in the line. A character might occupy more than one byte depending on the text encoding.
         int32_t characterCount{ 0 };
     };
 
@@ -264,7 +265,7 @@ namespace fheroes2
 
     protected:
         // Returns text lines parameters (in pixels) in 'offsets': x - horizontal line shift, y - vertical line shift.
-        // And in 'characterCount' - the number of characters on the line, in 'lineWidth' the width including the `offsetX` value.
+        // And in 'characterCount' - the number of bytes of the characters on the line, in 'lineWidth' the width including the `offsetX` value.
         // The 'keepTextTrailingSpaces' is used to take into account all the spaces at the text end in example when you want to join multiple texts in multi-font texts.
         void _getTextLineInfos( std::vector<TextLineInfo> & textLineInfos, const int32_t maxWidth, const int32_t rowHeight, const bool keepTextTrailingSpaces ) const;
 
@@ -385,12 +386,19 @@ namespace fheroes2
     public:
         explicit FontCharHandler( const FontType fontType );
 
+        // Reads a character starting from the given position and returns the number of bytes it occupies, which is always at least 1.
+        // A malformed character is returned as a character which is not available to render.
+        int32_t readCharacter( const uint8_t * data, const uint8_t * dataEnd, uint32_t & character ) const;
+
+        // Returns the number of bytes occupied by the character which ends right before the given position.
+        int32_t getPreviousCharacterLength( const uint8_t * dataBegin, const uint8_t * data ) const;
+
         // Returns true if character is available to render, including space (' ') and new line ('\n').
-        bool isAvailable( const uint8_t character ) const;
+        bool isAvailable( const uint32_t character ) const;
 
-        const Sprite & getSprite( const uint8_t character ) const;
+        const Sprite & getSprite( const uint32_t character ) const;
 
-        int32_t getWidth( const uint8_t character ) const;
+        int32_t getWidth( const uint32_t character ) const;
         int32_t getWidth( const std::string_view text ) const;
 
         int32_t getSpaceCharWidth() const
@@ -400,7 +408,7 @@ namespace fheroes2
 
     private:
         // Returns true if character is valid for the current code page, excluding space (' ') and new line ('\n').
-        bool _isValid( const uint8_t character ) const
+        bool _isValid( const uint32_t character ) const
         {
             return character >= 0x21 && character <= _charLimit;
         }

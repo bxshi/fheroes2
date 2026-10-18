@@ -43,20 +43,20 @@ namespace
     const std::string truncationSymbol( "..." );
 
     // Returns true if character is a line separator ('\n').
-    bool isLineSeparator( const uint8_t character )
+    bool isLineSeparator( const uint32_t character )
     {
         return ( character == '\n' );
     }
 
     // Returns true if character is a Space character (' ').
-    bool isSpaceChar( const uint8_t character )
+    bool isSpaceChar( const uint32_t character )
     {
         return ( character == ' ' );
     }
 
     const fheroes2::Sprite errorImage;
 
-    const fheroes2::Sprite & getChar( const uint8_t character, const fheroes2::FontType & fontType )
+    const fheroes2::Sprite & getChar( const uint32_t character, const fheroes2::FontType & fontType )
     {
         switch ( fontType.size ) {
         case fheroes2::FontSize::SMALL:
@@ -165,10 +165,12 @@ namespace
 
         int32_t width = 0;
         const uint8_t * dataEnd = data + size;
+        uint32_t character = 0;
 
         if ( keepTrailingSpaces ) {
-            for ( ; data != dataEnd; ++data ) {
-                width += charHandler.getWidth( *data );
+            while ( data != dataEnd ) {
+                data += charHandler.readCharacter( data, dataEnd, character );
+                width += charHandler.getWidth( character );
             }
 
             return width;
@@ -177,12 +179,14 @@ namespace
         int32_t spaceWidth = 0;
         const int32_t spaceCharWidth = charHandler.getSpaceCharWidth();
 
-        for ( ; data != dataEnd; ++data ) {
-            if ( isSpaceChar( *data ) ) {
+        while ( data != dataEnd ) {
+            data += charHandler.readCharacter( data, dataEnd, character );
+
+            if ( isSpaceChar( character ) ) {
                 spaceWidth += spaceCharWidth;
             }
-            else if ( !isLineSeparator( *data ) ) {
-                width += spaceWidth + charHandler.getWidth( *data );
+            else if ( !isLineSeparator( character ) ) {
+                width += spaceWidth + charHandler.getWidth( character );
 
                 spaceWidth = 0;
             }
@@ -196,13 +200,17 @@ namespace
         assert( data != nullptr && size > 0 );
 
         const uint8_t * dataEnd = data + size;
+        uint32_t character = 0;
 
-        const fheroes2::Sprite & firstCharSprite = charHandler.getSprite( *data );
+        data += charHandler.readCharacter( data, dataEnd, character );
+
+        const fheroes2::Sprite & firstCharSprite = charHandler.getSprite( character );
         fheroes2::Rect area( firstCharSprite.x(), firstCharSprite.y(), firstCharSprite.width(), firstCharSprite.height() );
-        ++data;
 
-        for ( ; data != dataEnd; ++data ) {
-            const fheroes2::Sprite & sprite = charHandler.getSprite( *data );
+        while ( data != dataEnd ) {
+            data += charHandler.readCharacter( data, dataEnd, character );
+
+            const fheroes2::Sprite & sprite = charHandler.getSprite( character );
 
             if ( const int32_t spriteY = sprite.y(); spriteY < area.y ) {
                 // This character sprite is drawn higher than all previous - update `height` and `y`.
@@ -225,13 +233,19 @@ namespace
         assert( data != nullptr && size > 0 && maxWidth > 0 );
 
         int32_t width = 0;
+        const uint8_t * dataBegin = data;
+        const uint8_t * dataEnd = data + size;
+        uint32_t character = 0;
 
-        for ( int32_t characterCount = 0; characterCount < size; ++characterCount, ++data ) {
-            width += charHandler.getWidth( *data );
+        while ( data != dataEnd ) {
+            const int32_t characterLength = charHandler.readCharacter( data, dataEnd, character );
+            width += charHandler.getWidth( character );
 
             if ( width > maxWidth ) {
-                return characterCount;
+                return static_cast<int32_t>( data - dataBegin );
             }
+
+            data += characterLength;
         }
 
         return size;
@@ -246,22 +260,25 @@ namespace
 
         const int32_t spaceCharWidth = charHandler.getSpaceCharWidth();
         const uint8_t * dataEnd = data + size;
+        uint32_t character = 0;
 
-        for ( ; data != dataEnd; ++data ) {
-            if ( isSpaceChar( *data ) ) {
+        while ( data != dataEnd ) {
+            data += charHandler.readCharacter( data, dataEnd, character );
+
+            if ( isSpaceChar( character ) ) {
                 offsetX += spaceCharWidth;
                 continue;
             }
 
             // TODO: remove this hack or expand it to cover more cases.
-            if ( isLineSeparator( *data ) ) {
+            if ( isLineSeparator( character ) ) {
                 // This should never happen as a line cannot contain line separator in the middle.
                 // But due to some limitations in UI we have to deal with it.
                 // The only way is to just ignore it here.
                 continue;
             }
 
-            const fheroes2::Sprite & charSprite = charHandler.getSprite( *data );
+            const fheroes2::Sprite & charSprite = charHandler.getSprite( character );
             assert( !charSprite.empty() );
 
             const fheroes2::Rect charRoi{ offsetX + charSprite.x(), y + charSprite.y(), charSprite.width(), charSprite.height() };
@@ -286,12 +303,16 @@ namespace
         int32_t width = 0;
 
         const uint8_t * dataEnd = data + size;
+        uint32_t character = 0;
+
         while ( data != dataEnd ) {
-            if ( isSpaceChar( *data ) || isLineSeparator( *data ) ) {
+            data += charHandler.readCharacter( data, dataEnd, character );
+
+            if ( isSpaceChar( character ) || isLineSeparator( character ) ) {
                 // If it is the end of line ("\n") or a space (" "), then the word has ended.
-                if ( width == 0 && isSpaceChar( *data ) ) {
+                if ( width == 0 && isSpaceChar( character ) ) {
                     // No words exist on this till now. Let's put maximum width as space width.
-                    width = charHandler.getWidth( *data );
+                    width = charHandler.getWidth( character );
                 }
 
                 if ( maxWidth < width ) {
@@ -301,10 +322,8 @@ namespace
                 width = 0;
             }
             else {
-                width += charHandler.getWidth( *data );
+                width += charHandler.getWidth( character );
             }
-
-            ++data;
         }
 
         return std::max( maxWidth, width );
@@ -589,12 +608,15 @@ namespace fheroes2
         const uint8_t * dataEnd = data + _text.size();
 
         while ( data != dataEnd ) {
-            if ( isLineSeparator( *data ) ) {
+            uint32_t character = 0;
+            const int32_t characterLength = charHandler.readCharacter( data, dataEnd, character );
+
+            if ( isLineSeparator( character ) ) {
                 if ( !_keepLineTrailingSpaces ) {
                     lineWidth -= spaceCharCount * charHandler.getSpaceCharWidth();
                 }
 
-                textLineInfos.emplace_back( offsetX, offsetY, lineWidth, lineCharCount + 1 );
+                textLineInfos.emplace_back( offsetX, offsetY, lineWidth, lineCharCount + characterLength );
 
                 spaceCharCount = 0;
                 offsetX = 0;
@@ -603,24 +625,24 @@ namespace fheroes2
                 lastWordCharCount = 0;
                 lineWidth = 0;
 
-                ++data;
+                data += characterLength;
             }
             else {
                 // This is another character in the line. Get its width.
 
-                const int32_t charWidth = charHandler.getWidth( *data );
+                const int32_t charWidth = charHandler.getWidth( character );
 
                 if ( ( lineWidth != 0 ) && ( lineWidth + charWidth > maxWidth ) ) {
                     // Current character has exceeded the maximum line width
                     // and the character is not bigger than the maximum width.
 
-                    if ( !_keepLineTrailingSpaces && isSpaceChar( *data ) ) {
+                    if ( !_keepLineTrailingSpaces && isSpaceChar( character ) ) {
                         // Current character could be a space character then current line is over.
                         // For the characters count we take this space into the account.
-                        ++lineCharCount;
+                        lineCharCount += characterLength;
 
                         // Skip this space character.
-                        ++data;
+                        data += characterLength;
                     }
                     else if ( lineCharCount == lastWordCharCount ) {
                         // This is the only word in the line.
@@ -676,17 +698,17 @@ namespace fheroes2
                     lineWidth = 0;
                 }
                 else {
-                    if ( isSpaceChar( *data ) ) {
+                    if ( isSpaceChar( character ) ) {
                         lastWordCharCount = 0;
                         ++spaceCharCount;
                     }
                     else {
-                        ++lastWordCharCount;
+                        lastWordCharCount += characterLength;
                         spaceCharCount = 0;
                     }
 
-                    ++data;
-                    ++lineCharCount;
+                    data += characterLength;
+                    lineCharCount += characterLength;
                     lineWidth += charWidth;
                 }
             }
@@ -806,18 +828,26 @@ namespace fheroes2
         size_t bestPos = targetLineStartPos;
         int32_t bestDistance = std::abs( currentXPos - targetLineXOffset );
 
+        const uint8_t * textData = reinterpret_cast<const uint8_t *>( _text.data() );
+        const uint8_t * textEnd = textData + _text.size();
+        const size_t targetLineEndPos = std::min( targetLineStartPos + tempLineInfos[targetLineNumber].characterCount, _text.size() );
+
         int32_t targetXPos = targetLineXOffset;
-        for ( int32_t i = 0; i < tempLineInfos[targetLineNumber].characterCount + 1; ++i ) {
-            const size_t textPos = targetLineStartPos + i;
+        size_t textPos = targetLineStartPos;
+        while ( true ) {
             const int32_t distance = std::abs( currentXPos - targetXPos );
             if ( distance < bestDistance ) {
                 bestDistance = distance;
                 bestPos = textPos;
             }
 
-            if ( textPos < _text.size() ) {
-                targetXPos += charHandler.getWidth( static_cast<uint8_t>( _text[textPos] ) );
+            if ( textPos >= targetLineEndPos ) {
+                break;
             }
+
+            uint32_t character = 0;
+            textPos += charHandler.readCharacter( textData + textPos, textEnd, character );
+            targetXPos += charHandler.getWidth( character );
         }
 
         return bestPos;
@@ -875,28 +905,34 @@ namespace fheroes2
         int32_t textEndPos = _visibleTextBeginPos + _visibleTextLength;
 
         // If the cursor is to the right of or close to the visible text end position, we update this position to show the cursor and text around it.
+        const uint8_t * textDataEnd = textData + originalTextSize;
+        uint32_t character = 0;
+
         while ( ( textEndPos < _cursorPositionInText + cursorToTruncationDistance ) && ( textEndPos < originalTextSize ) ) {
-            currentWidth += charHandler.getWidth( textData[textEndPos] );
-            ++textEndPos;
-            ++_visibleTextLength;
+            int32_t characterLength = charHandler.readCharacter( textData + textEndPos, textDataEnd, character );
+            currentWidth += charHandler.getWidth( character );
+            textEndPos += characterLength;
+            _visibleTextLength += characterLength;
 
             while ( currentWidth > ( textEndPos != originalTextSize ? twiceTruncatedMaxWidth : truncatedMaxWidth ) ) {
                 // Remove characters from the begin.
-                currentWidth -= charHandler.getWidth( textData[_visibleTextBeginPos] );
-                ++_visibleTextBeginPos;
-                --_visibleTextLength;
+                characterLength = charHandler.readCharacter( textData + _visibleTextBeginPos, textDataEnd, character );
+                currentWidth -= charHandler.getWidth( character );
+                _visibleTextBeginPos += characterLength;
+                _visibleTextLength -= characterLength;
             }
 
             while ( textEndPos != originalTextSize ) {
                 // Some characters from the text end might also fit the width.
-                const int32_t charWidth = charHandler.getWidth( textData[textEndPos] );
+                characterLength = charHandler.readCharacter( textData + textEndPos, textDataEnd, character );
+                const int32_t charWidth = charHandler.getWidth( character );
                 if ( currentWidth + charWidth > twiceTruncatedMaxWidth ) {
                     break;
                 }
 
-                currentWidth += charHandler.getWidth( textData[textEndPos] );
-                ++textEndPos;
-                ++_visibleTextLength;
+                currentWidth += charWidth;
+                textEndPos += characterLength;
+                _visibleTextLength += characterLength;
             }
         }
 
@@ -904,13 +940,15 @@ namespace fheroes2
 
         while ( _visibleTextBeginPos != 0 ) {
             // Some characters from the text begin might also fit the width.
-            const int32_t prevCharWidth = charHandler.getWidth( textData[_visibleTextBeginPos - 1] );
+            const int32_t prevCharLength = charHandler.getPreviousCharacterLength( textData, textData + _visibleTextBeginPos );
+            charHandler.readCharacter( textData + _visibleTextBeginPos - prevCharLength, textDataEnd, character );
+            const int32_t prevCharWidth = charHandler.getWidth( character );
             if ( currentWidth + prevCharWidth > ( textEndPos != originalTextSize ? twiceTruncatedMaxWidth : truncatedMaxWidth ) ) {
                 break;
             }
 
-            --_visibleTextBeginPos;
-            ++_visibleTextLength;
+            _visibleTextBeginPos -= prevCharLength;
+            _visibleTextLength += prevCharLength;
             currentWidth += prevCharWidth;
         }
 
@@ -946,9 +984,14 @@ namespace fheroes2
         std::vector<TextLineInfo> lineInfos;
         _getTextLineInfos( lineInfos, _maxTextWidth, fontHeight, true );
 
+        const FontCharHandler charHandler( _fontType );
+        const uint8_t * textData = reinterpret_cast<const uint8_t *>( _text.data() );
+        const uint8_t * textDataEnd = textData + _text.size();
+        const size_t lastCharacterPos = _text.size() - charHandler.getPreviousCharacterLength( textData, textDataEnd );
+
         if ( pointerLine >= static_cast<int32_t>( lineInfos.size() ) ) {
             // Pointer is lower than the last text line.
-            return _text.size() - 1;
+            return lastCharacterPos;
         }
 
         size_t cursorPosition = 0;
@@ -971,20 +1014,22 @@ namespace fheroes2
             return cursorPosition;
         }
 
-        const FontCharHandler charHandler( _fontType );
-        const size_t textSize = _text.size();
+        const uint8_t * data = textData + cursorPosition;
+        uint32_t character = 0;
 
-        for ( size_t i = cursorPosition; i < textSize; ++i ) {
-            const int32_t charWidth = charHandler.getWidth( static_cast<uint8_t>( _text[i] ) );
+        while ( data < textDataEnd ) {
+            const int32_t characterLength = charHandler.readCharacter( data, textDataEnd, character );
+            const int32_t charWidth = charHandler.getWidth( character );
 
             if ( positionOffsetX + charWidth / 2 >= maxOffsetX ) {
-                return i;
+                return static_cast<size_t>( data - textData );
             }
 
             positionOffsetX += charWidth;
+            data += characterLength;
         }
 
-        return textSize - 1;
+        return lastCharacterPos;
     }
 
     size_t TextInput::_getTextInputCursorPosition( const int32_t cursorOffsetX, const Rect & roi, const bool isCenterAligned ) const
@@ -1002,21 +1047,26 @@ namespace fheroes2
         }
 
         const int32_t maxOffset = cursorOffsetX - textStartOffsetX;
-        const std::string visibleText = { ( _text.data() ) + _visibleTextBeginPos, static_cast<size_t>( _visibleTextLength ) };
-        const size_t textSize = visibleText.size();
+        const uint8_t * visibleTextBegin = reinterpret_cast<const uint8_t *>( _text.data() ) + _visibleTextBeginPos;
+        const uint8_t * visibleTextEnd = visibleTextBegin + _visibleTextLength;
         int32_t positionOffset = 0;
         const FontCharHandler charHandler( _fontType );
 
-        for ( size_t i = 0; i < textSize; ++i ) {
-            const int32_t currentCharWidth = charHandler.getWidth( static_cast<uint8_t>( visibleText[i] ) );
+        const uint8_t * data = visibleTextBegin;
+        uint32_t character = 0;
+
+        while ( data < visibleTextEnd ) {
+            const int32_t characterLength = charHandler.readCharacter( data, visibleTextEnd, character );
+            const int32_t currentCharWidth = charHandler.getWidth( character );
 
             if ( positionOffset + currentCharWidth / 2 >= maxOffset ) {
-                return i + _visibleTextBeginPos;
+                return static_cast<size_t>( data - visibleTextBegin ) + _visibleTextBeginPos;
             }
             positionOffset += currentCharWidth;
+            data += characterLength;
         }
 
-        return textSize + _visibleTextBeginPos;
+        return static_cast<size_t>( _visibleTextLength ) + _visibleTextBeginPos;
     }
 
     void TextInput::_updateCursorAreaInText()
@@ -1338,18 +1388,33 @@ namespace fheroes2
         // Do nothing.
     }
 
-    bool FontCharHandler::isAvailable( const uint8_t character ) const
+    int32_t FontCharHandler::readCharacter( const uint8_t * data, [[maybe_unused]] const uint8_t * dataEnd, uint32_t & character ) const
+    {
+        assert( data != nullptr && data < dataEnd );
+
+        character = *data;
+        return 1;
+    }
+
+    int32_t FontCharHandler::getPreviousCharacterLength( [[maybe_unused]] const uint8_t * dataBegin, [[maybe_unused]] const uint8_t * data ) const
+    {
+        assert( dataBegin != nullptr && dataBegin < data );
+
+        return 1;
+    }
+
+    bool FontCharHandler::isAvailable( const uint32_t character ) const
     {
         return ( isSpaceChar( character ) || _isValid( character ) || isLineSeparator( character ) );
     }
 
-    const Sprite & FontCharHandler::getSprite( const uint8_t character ) const
+    const Sprite & FontCharHandler::getSprite( const uint32_t character ) const
     {
         // Display '?' in place of the invalid character.
         return getChar( _isValid( character ) ? character : invalidChar, _fontType );
     }
 
-    int32_t FontCharHandler::getWidth( const uint8_t character ) const
+    int32_t FontCharHandler::getWidth( const uint32_t character ) const
     {
         if ( isSpaceChar( character ) ) {
             return _spaceCharWidth;
@@ -1369,9 +1434,15 @@ namespace fheroes2
     int32_t FontCharHandler::getWidth( const std::string_view text ) const
     {
         int32_t width = 0;
-        for ( const char c : text ) {
-            width += getWidth( c );
+        const uint8_t * data = reinterpret_cast<const uint8_t *>( text.data() );
+        const uint8_t * dataEnd = data + text.size();
+        uint32_t character = 0;
+
+        while ( data != dataEnd ) {
+            data += readCharacter( data, dataEnd, character );
+            width += getWidth( character );
         }
+
         return width;
     }
 
@@ -1403,7 +1474,19 @@ namespace fheroes2
 
         const FontCharHandler charHandler( fontType );
 
-        return std::all_of( text.begin(), text.end(), [&charHandler]( const int8_t character ) { return charHandler.isAvailable( character ); } );
+        const uint8_t * data = reinterpret_cast<const uint8_t *>( text.data() );
+        const uint8_t * dataEnd = data + text.size();
+        uint32_t character = 0;
+
+        while ( data != dataEnd ) {
+            data += charHandler.readCharacter( data, dataEnd, character );
+
+            if ( !charHandler.isAvailable( character ) ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     int32_t getTruncationSymbolWidth( const FontType fontType )
