@@ -57,6 +57,7 @@
 #include "ui_language.h"
 #include "ui_text.h"
 #include "ui_tool.h"
+#include "ui_unicode_font.h"
 
 namespace
 {
@@ -2439,18 +2440,7 @@ namespace
         _icnVsSprite[fontId].resize( original.size() );
 
         for ( size_t i = 0; i < original.size(); ++i ) {
-            const fheroes2::Sprite & in = original[i];
-            fheroes2::Sprite & out = _icnVsSprite[fontId][i];
-            out.resize( in.width() + 6, in.height() + 6 );
-            out.reset();
-            Copy( in, 0, 0, out, 3, 3, in.width(), in.height() );
-            out.setPosition( in.x() - 2, in.y() - 2 );
-
-            applyFontVerticalGradient( out, gradientInnerColor, gradientOuterColor );
-
-            Blit( CreateContour( out, contourInnerColor ), out );
-            Blit( CreateContour( out, 0 ), out );
-            Blit( CreateContour( out, contourOuterColor ), out );
+            _icnVsSprite[fontId][i] = fheroes2::generateGradientLetter( original[i], gradientInnerColor, gradientOuterColor, contourInnerColor, contourOuterColor );
         }
     }
 
@@ -5894,6 +5884,9 @@ namespace Assets
         for ( const int icnId : scalableIcnId ) {
             _icnVsSprite[icnId].clear();
         }
+
+        // Large font letters of characters beyond ASCII depend on the scaling type too.
+        fheroes2::resetUnicodeCharacterSprites();
 
         resetScaledBackgroundImages();
     }

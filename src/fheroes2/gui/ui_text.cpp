@@ -31,6 +31,7 @@
 #include "game_assets.h"
 #include "icn.h"
 #include "ui_language.h"
+#include "ui_unicode_font.h"
 #include "utf8.h"
 
 namespace
@@ -1404,7 +1405,8 @@ namespace fheroes2
         : _fontType( fontType )
         , _charLimit( getCharacterLimit( fontType.size ) )
         , _spaceCharWidth( _getSpaceCharWidth() )
-        , _isUtf8( getCodePage( getCurrentLanguage() ) == CodePage::UTF8 )
+        , _language( getCurrentLanguage() )
+        , _isUtf8( getCodePage( _language ) == CodePage::UTF8 )
     {
         // Do nothing.
     }
@@ -1439,6 +1441,11 @@ namespace fheroes2
 
     const Sprite & FontCharHandler::getSprite( const uint32_t character ) const
     {
+        if ( _isUnicodeGlyph( character ) ) {
+            const Sprite * sprite = getUnicodeCharacterSprite( character, _fontType, _language );
+            return ( sprite != nullptr ) ? *sprite : getChar( invalidChar, _fontType );
+        }
+
         // Display '?' in place of the invalid character.
         return getChar( _isValid( character ) ? character : invalidChar, _fontType );
     }
@@ -1473,6 +1480,15 @@ namespace fheroes2
         }
 
         return width;
+    }
+
+    bool FontCharHandler::_isValid( const uint32_t character ) const
+    {
+        if ( _isUnicodeGlyph( character ) ) {
+            return getUnicodeCharacterSprite( character, _fontType, _language ) != nullptr;
+        }
+
+        return character >= 0x21 && character <= _charLimit;
     }
 
     int32_t FontCharHandler::_getSpaceCharWidth() const

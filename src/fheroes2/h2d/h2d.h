@@ -1,6 +1,6 @@
 /***************************************************************************
  *   fheroes2: https://github.com/ihhub/fheroes2                           *
- *   Copyright (C) 2021 - 2022                                             *
+ *   Copyright (C) 2021 - 2026                                             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -20,7 +20,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace fheroes2
 {
@@ -39,5 +41,9 @@ namespace fheroes2
         };
 
         bool readImage( const std::string & name, Sprite & image );
+
+        // Reads a file from the given H2D archive which is located among other game data files.
+        // Returns an empty vector if the archive or the file does not exist.
+        std::vector<uint8_t> readFile( const std::string & archiveName, const std::string & fileName );
     }
 }

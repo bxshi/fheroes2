@@ -146,4 +146,21 @@ namespace fheroes2::h2d
     {
         return readImageFromH2D( reader, name, image );
     }
+
+    std::vector<uint8_t> readFile( const std::string & archiveName, const std::string & fileName )
+    {
+        std::string filePath;
+        if ( !getH2DFilePath( archiveName, filePath ) ) {
+            VERBOSE_LOG( "The '" << archiveName << "' file was not found." )
+            return {};
+        }
+
+        H2DReader archiveReader;
+        if ( !archiveReader.open( filePath ) ) {
+            ERROR_LOG( "The '" << filePath << "' file cannot be opened." )
+            return {};
+        }
+
+        return archiveReader.getFile( fileName );
+    }
 }

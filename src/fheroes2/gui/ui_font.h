@@ -29,7 +29,34 @@ namespace fheroes2
     class Image;
     class Sprite;
 
+    struct FontType;
+
     enum class SupportedLanguage : uint8_t;
+
+    // A monochrome shape of a character which is not a part of the game fonts.
+    struct LetterShape
+    {
+        // Pixels of the shape row by row: 1 for a pixel of the character and 0 for a transparent pixel.
+        std::vector<uint8_t> pixels;
+
+        int32_t width{ 0 };
+        int32_t height{ 0 };
+
+        // The position of the shape relative to the left side of the character and to the top of a text line.
+        int32_t offsetX{ 0 };
+        int32_t offsetY{ 0 };
+
+        // The horizontal distance from the beginning of this character to the beginning of the next one.
+        int32_t advance{ 0 };
+    };
+
+    // Generates a letter in the style of the given font type from the shape of a character.
+    // Large font letters are upscaled normal font letters, therefore the shape for them must be the same as for the normal font.
+    Sprite generateLetter( const LetterShape & shape, const FontType & fontType );
+
+    // Generates a letter with a vertical gradient and contours from a letter of a white font.
+    Sprite generateGradientLetter( const Sprite & letter, const uint8_t gradientInnerColor, const uint8_t gradientOuterColor, const uint8_t contourInnerColor,
+                                   const uint8_t contourOuterColor );
 
     void generateAlphabet( const SupportedLanguage language, std::vector<std::vector<Sprite>> & icnVsSprite );
 

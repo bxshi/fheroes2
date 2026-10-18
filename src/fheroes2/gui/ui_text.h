@@ -414,10 +414,12 @@ namespace fheroes2
 
     private:
         // Returns true if character is valid for the current code page, excluding space (' ') and new line ('\n').
-        bool _isValid( const uint32_t character ) const
+        bool _isValid( const uint32_t character ) const;
+
+        // Returns true if the character is not a part of the game fonts and its sprite comes from a separate glyph set.
+        bool _isUnicodeGlyph( const uint32_t character ) const
         {
-            // With UTF-8 encoding only ASCII characters are taken from the game fonts.
-            return character >= 0x21 && character <= _charLimit && ( !_isUtf8 || character < 0x80 );
+            return _isUtf8 && character >= 0x80;
         }
 
         int32_t _getSpaceCharWidth() const;
@@ -425,6 +427,7 @@ namespace fheroes2
         const FontType _fontType;
         const uint32_t _charLimit;
         const int32_t _spaceCharWidth;
+        const SupportedLanguage _language;
         const bool _isUtf8;
     };
 

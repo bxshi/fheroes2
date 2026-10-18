@@ -187,6 +187,7 @@
     <ClCompile Include="src\fheroes2\gui\ui_option_item.cpp" />
     <ClCompile Include="src\fheroes2\gui\ui_text.cpp" />
     <ClCompile Include="src\fheroes2\gui\ui_tool.cpp" />
+    <ClCompile Include="src\fheroes2\gui\ui_unicode_font.cpp" />
     <ClCompile Include="src\fheroes2\gui\ui_window.cpp" />
     <ClCompile Include="src\fheroes2\h2d\h2d.cpp" />
     <ClCompile Include="src\fheroes2\heroes\direction.cpp" />
@@ -412,6 +413,7 @@
     <ClInclude Include="src\fheroes2\gui\ui_option_item.h" />
     <ClInclude Include="src\fheroes2\gui\ui_text.h" />
     <ClInclude Include="src\fheroes2\gui\ui_tool.h" />
+    <ClInclude Include="src\fheroes2\gui\ui_unicode_font.h" />
     <ClInclude Include="src\fheroes2\gui\ui_window.h" />
     <ClInclude Include="src\fheroes2\h2d\h2d.h" />
     <ClInclude Include="src\fheroes2\heroes\direction.h" />

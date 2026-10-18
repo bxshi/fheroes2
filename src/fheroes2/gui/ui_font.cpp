@@ -31,7 +31,10 @@
 #include "icn.h"
 #include "image.h"
 #include "math_base.h"
+#include "pal.h"
+#include "settings.h"
 #include "ui_language.h"
+#include "ui_text.h"
 
 namespace
 {
@@ -44,6 +47,9 @@ namespace
     const uint8_t buttonEvilPressedColor = 36;
     const uint8_t buttonContourColor = 10;
     const fheroes2::Point buttonFontOffset{ -1, 0 };
+
+    // The main color of white font letters.
+    const uint8_t whiteFontLetterColor = 10;
 
     // The widths must be the same as space width for respective fonts.
     // Refer to FontCharHandler::_getSpaceCharWidth() function.
@@ -7150,6 +7156,129 @@ namespace fheroes2
             // DEL (delete).
             icnVsSprite[127 - 32] = dotSprite;
         }
+    }
+
+    Sprite generateLetter( const LetterShape & shape, const FontType & fontType )
+    {
+        assert( shape.width >= 0 && shape.height >= 0 && static_cast<size_t>( shape.width ) * shape.height == shape.pixels.size() );
+
+        const auto drawShape = [&shape]( Sprite & letter, const int32_t offsetX, const int32_t offsetY, const uint8_t color ) {
+            const uint8_t * pixel = shape.pixels.data();
+            for ( int32_t y = 0; y < shape.height; ++y ) {
+                for ( int32_t x = 0; x < shape.width; ++x, ++pixel ) {
+                    if ( *pixel != 0 ) {
+                        SetPixel( letter, offsetX + x, offsetY + y, color );
+                    }
+                }
+            }
+        };
+
+        if ( fontType.size == FontSize::BUTTON_RELEASED || fontType.size == FontSize::BUTTON_PRESSED ) {
+            // Just like for the rest of button font letters we need 2 pixels from all sides of a letter to add extra effects.
+            const int32_t offset = 2;
+
+            Sprite letter( std::max( shape.advance, std::max( shape.offsetX, 0 ) + shape.width ) + offset * 2, shape.height + offset * 2 );
+            letter.reset();
+            letter.setPosition( buttonFontOffset.x, shape.offsetY - offset );
+
+            drawShape( letter, offset + std::max( shape.offsetX, 0 ), offset, buttonGoodReleasedColor );
+
+            const bool isGoodInterface = ( fontType.color != FontColor::GRAY );
+
+            if ( fontType.size == FontSize::BUTTON_RELEASED ) {
+                applyGoodButtonReleasedLetterEffects( letter );
+                if ( !isGoodInterface ) {
+                    applyEvilButtonReleasedLetterEffects( letter );
+                }
+            }
+            else {
+                applyGoodButtonPressedLetterEffects( letter );
+                if ( !isGoodInterface ) {
+                    applyEvilButtonPressedLetterEffects( letter );
+                }
+            }
+
+            return letter;
+        }
+
+        // Shadows are drawn to the left and below letters so we need extra space for them.
+        const bool isSmallFont = ( fontType.size == FontSize::SMALL );
+        const int32_t shadowWidth = 1;
+        const int32_t shadowHeight = isSmallFont ? 1 : 2;
+
+        // A shape can start to the left of the character position.
+        const int32_t extraLeftWidth = std::max( -shape.offsetX, 0 );
+
+        Sprite letter( shadowWidth + extraLeftWidth + std::max( shape.advance, shape.offsetX + shape.width ), shape.height + shadowHeight );
+        letter.reset();
+        letter.setPosition( -extraLeftWidth, shape.offsetY );
+
+        drawShape( letter, shadowWidth + extraLeftWidth + shape.offsetX, 0, whiteFontLetterColor );
+
+        if ( isSmallFont ) {
+            updateSmallFontLetterShadow( letter );
+        }
+        else {
+            updateNormalFontLetterShadow( letter );
+        }
+
+        if ( fontType.size == FontSize::LARGE ) {
+            // Large font letters are upscaled normal font letters.
+            Sprite largeLetter( letter.width() * 2, letter.height() * 2 );
+            if ( Settings::Get().isScreenScalingTypeNearest() ) {
+                Resize( letter, largeLetter );
+            }
+            else {
+                SubpixelResize( letter, largeLetter );
+            }
+            largeLetter.setPosition( letter.x() * 2, letter.y() * 2 );
+
+            letter = std::move( largeLetter );
+        }
+
+        switch ( fontType.color ) {
+        case FontColor::WHITE:
+            break;
+        case FontColor::GRAY:
+            ApplyPalette( letter, PAL::GetPalette( PAL::PaletteType::GRAY_FONT ) );
+            break;
+        case FontColor::YELLOW:
+            ApplyPalette( letter, PAL::GetPalette( PAL::PaletteType::YELLOW_FONT ) );
+            break;
+        case FontColor::GOLDEN_GRADIENT:
+            if ( fontType.size == FontSize::LARGE ) {
+                return generateGradientLetter( letter, 108, 127, 55, 62 );
+            }
+            return generateGradientLetter( letter, 108, 133, 55, 62 );
+        case FontColor::SILVER_GRADIENT:
+            if ( fontType.size == FontSize::LARGE ) {
+                return generateGradientLetter( letter, 10, 26, 29, 0 );
+            }
+            return generateGradientLetter( letter, 10, 31, 29, 0 );
+        default:
+            // Did you add a new font color? Add the corresponding logic for it!
+            assert( 0 );
+            break;
+        }
+
+        return letter;
+    }
+
+    Sprite generateGradientLetter( const Sprite & letter, const uint8_t gradientInnerColor, const uint8_t gradientOuterColor, const uint8_t contourInnerColor,
+                                   const uint8_t contourOuterColor )
+    {
+        Sprite out( letter.width() + 6, letter.height() + 6 );
+        out.reset();
+        Copy( letter, 0, 0, out, 3, 3, letter.width(), letter.height() );
+        out.setPosition( letter.x() - 2, letter.y() - 2 );
+
+        applyFontVerticalGradient( out, gradientInnerColor, gradientOuterColor );
+
+        Blit( CreateContour( out, contourInnerColor ), out );
+        Blit( CreateContour( out, 0 ), out );
+        Blit( CreateContour( out, contourOuterColor ), out );
+
+        return out;
     }
 
     void applyFontVerticalGradient( Image & image, const uint8_t insideColor, const uint8_t outsideColor )
