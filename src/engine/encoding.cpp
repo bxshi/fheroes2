@@ -25,6 +25,7 @@
 #include <cstdint>
 
 #include "big5_table.h"
+#include "gb2312_table.h"
 #include "utf8.h"
 
 namespace
@@ -50,6 +51,16 @@ namespace
         }
 
         return -1;
+    }
+
+    bool isGb2312LeadByte( const uint8_t value )
+    {
+        return value >= Encoding::detail::gb2312LeadFirst && value <= Encoding::detail::gb2312LeadLast;
+    }
+
+    bool isGb2312TrailByte( const uint8_t value )
+    {
+        return value >= Encoding::detail::gb2312TrailFirst && value <= Encoding::detail::gb2312TrailLast;
     }
 }
 
@@ -91,6 +102,56 @@ namespace Encoding
 
             const size_t tableIndex = static_cast<size_t>( lead - detail::big5LeadFirst ) * detail::big5TrailCount + static_cast<size_t>( trailIndex );
             const uint16_t codePoint = detail::big5Table[tableIndex];
+
+            if ( codePoint == 0 ) {
+                output += replacementCharacter;
+            }
+            else {
+                fheroes2::appendUtf8Character( output, codePoint );
+            }
+
+            pos += 2;
+        }
+
+        return output;
+    }
+
+    std::string gb2312ToUtf8( const std::string_view text )
+    {
+        std::string output;
+        // Every GB2312 character (2 bytes) becomes at most 3 bytes in UTF-8.
+        output.reserve( text.size() + text.size() / 2 );
+
+        const size_t size = text.size();
+        size_t pos = 0;
+
+        while ( pos < size ) {
+            const uint8_t lead = static_cast<uint8_t>( text[pos] );
+
+            if ( lead < 0x80 ) {
+                output += static_cast<char>( lead );
+                ++pos;
+                continue;
+            }
+
+            if ( !isGb2312LeadByte( lead ) || pos + 1 >= size ) {
+                // An invalid lead byte or a lead byte at the very end of the text.
+                output += replacementCharacter;
+                ++pos;
+                continue;
+            }
+
+            const uint8_t trail = static_cast<uint8_t>( text[pos + 1] );
+            if ( !isGb2312TrailByte( trail ) ) {
+                // The next byte cannot be a trail byte. Consume only the lead byte so that the next byte
+                // (for example, an ASCII character) is processed on its own.
+                output += replacementCharacter;
+                ++pos;
+                continue;
+            }
+
+            const size_t tableIndex = static_cast<size_t>( lead - detail::gb2312LeadFirst ) * detail::gb2312TrailCount + ( trail - detail::gb2312TrailFirst );
+            const uint16_t codePoint = detail::gb2312Table[tableIndex];
 
             if ( codePoint == 0 ) {
                 output += replacementCharacter;

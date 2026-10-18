@@ -30,4 +30,7 @@ namespace Encoding
     // is replaced by '?': one byte is consumed for an invalid lead byte (or a lead byte not followed by
     // a valid trail byte), two bytes are consumed for an undefined pair with a valid trail byte.
     std::string big5ToUtf8( const std::string_view text );
+
+    // Converts GB2312 (EUC-CN) encoded text to UTF-8 following the same rules as big5ToUtf8().
+    std::string gb2312ToUtf8( const std::string_view text );
 }
