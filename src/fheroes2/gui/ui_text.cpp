@@ -703,6 +703,20 @@ namespace fheroes2
         }
     }
 
+    size_t Text::getFirstLineSize( const int32_t maxWidth ) const
+    {
+        if ( _text.empty() ) {
+            return 0;
+        }
+
+        const auto languageSwitcher = getLanguageSwitcher( *this );
+
+        std::vector<TextLineInfo> lineInfos;
+        _getTextLineInfos( lineInfos, maxWidth, height(), false );
+
+        return static_cast<size_t>( lineInfos.front().characterCount );
+    }
+
     void Text::_getTextLineInfos( std::vector<TextLineInfo> & textLineInfos, const int32_t maxWidth, const int32_t rowHeight, const bool keepTextTrailingSpaces ) const
     {
         assert( !_text.empty() );

@@ -856,6 +856,16 @@ namespace Battle
 
                 // Theoretically there could be such a large word that did not fit the log width.
                 if ( pos == std::string::npos ) {
+                    // Some languages, like Chinese, do not separate words by spaces. Such phrases can be split according to the line breaking rules.
+                    const size_t firstLineSize = fheroes2::Text( str, fheroes2::FontType::normalWhite() ).getFirstLineSize( battleLogElementWidth );
+                    if ( firstLineSize > 0 && firstLineSize < str.size() && str[firstLineSize - 1] != ' ' ) {
+                        _messages.push_back( str.substr( 0, firstLineSize ) );
+                        // Put the rest of the phrase to the next line.
+                        str = str.substr( firstLineSize );
+
+                        break;
+                    }
+
                     // Find the next word in this phrase.
                     pos = str.find( ' ' );
 

@@ -252,6 +252,9 @@ namespace fheroes2
 
         void fitToArea( const int32_t maxWidth, const int32_t maxHeight );
 
+        // Returns the number of bytes of the text which are placed on the first line when the text is limited by the given width.
+        size_t getFirstLineSize( const int32_t maxWidth ) const;
+
         std::string text() const override
         {
             return _text;
