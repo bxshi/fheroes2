@@ -59,8 +59,8 @@ lt.mo: lt.po
 vi.mo: vi.po
 	$(call MSGFMT,CP1258)
 
-# Traditional Chinese uses UTF-8
-zh_TW.mo: zh_TW.po
+# Traditional and Simplified Chinese use UTF-8
+zh_CN.mo zh_TW.mo: %.mo: %.po
 	if msgfmt --help | grep -q no-convert >/dev/null 2>/dev/null; then msgfmt $< -o $@ --no-convert; else msgfmt $< -o $@; fi
 
 # Romanian uses ISO-8859-16

@@ -6670,6 +6670,9 @@ msgstr "世界語"
 msgid "Traditional Chinese"
 msgstr "繁體中文"
 
+msgid "Simplified Chinese"
+msgstr "簡體中文"
+
 msgid "Slow"
 msgstr "慢"
 

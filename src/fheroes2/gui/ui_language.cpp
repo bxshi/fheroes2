@@ -89,6 +89,8 @@ namespace
                                                                                            { "vietnamese", fheroes2::SupportedLanguage::Vietnamese },
                                                                                            { "zh_tw", fheroes2::SupportedLanguage::TraditionalChinese },
                                                                                            { "traditional chinese", fheroes2::SupportedLanguage::TraditionalChinese },
+                                                                                           { "zh_cn", fheroes2::SupportedLanguage::SimplifiedChinese },
+                                                                                           { "simplified chinese", fheroes2::SupportedLanguage::SimplifiedChinese },
                                                                                            { "el", fheroes2::SupportedLanguage::Greek },
                                                                                            { "greek", fheroes2::SupportedLanguage::Greek },
                                                                                            { "eo", fheroes2::SupportedLanguage::Esperanto },
@@ -166,7 +168,8 @@ namespace fheroes2
                                                              SupportedLanguage::Vietnamese,
                                                              SupportedLanguage::Greek,
                                                              SupportedLanguage::Esperanto,
-                                                             SupportedLanguage::TraditionalChinese };
+                                                             SupportedLanguage::TraditionalChinese,
+                                                             SupportedLanguage::SimplifiedChinese };
 
         for ( const SupportedLanguage language : possibleLanguages ) {
             if ( language != resourceLanguage ) {
@@ -248,6 +251,8 @@ namespace fheroes2
             return _( "Esperanto" );
         case SupportedLanguage::TraditionalChinese:
             return _( "Traditional Chinese" );
+        case SupportedLanguage::SimplifiedChinese:
+            return _( "Simplified Chinese" );
         default:
             // Did you add a new language? Please add the code to handle it.
             assert( 0 );
@@ -306,6 +311,8 @@ namespace fheroes2
             return "eo";
         case SupportedLanguage::TraditionalChinese:
             return "zh_TW";
+        case SupportedLanguage::SimplifiedChinese:
+            return "zh_CN";
         default:
             // Did you add a new language? Please add the code to handle it.
             assert( 0 );
@@ -403,6 +410,7 @@ namespace fheroes2
         case SupportedLanguage::Esperanto:
             return CodePage::ISO8859_3;
         case SupportedLanguage::TraditionalChinese:
+        case SupportedLanguage::SimplifiedChinese:
             return CodePage::UTF8;
         default:
             // Add new language handling code!

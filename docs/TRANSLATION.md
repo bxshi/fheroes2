@@ -37,8 +37,8 @@ language abbreviations. Then to have font support, you will have to specify what
 the language to the font generation code found in `src/fheroes2/gui/ui_font.cpp`. If a compatible font encoding has not currently
 been implemented, then code for that will need to be written.
 
-Languages with too many characters for a single-byte font encoding, like Traditional Chinese, use UTF-8 instead. Their characters
-are not generated from the game fonts but loaded from a glyph archive in `files/data` (for example, `zh_hant_font.h2d`) which is
+Languages with too many characters for a single-byte font encoding, like Traditional and Simplified Chinese, use UTF-8 instead. Their
+characters are not generated from the game fonts but loaded from a glyph archive in `files/data` (for example, `zh_hant_font.h2d`) which is
 generated from a pixel font by the `script/tools/generate_cjk_font.py` script. The archive contains every character used by the
 translation, so if a translation starts using a character which is not displayed in the game, the archive has to be regenerated
 using the updated PO file:
@@ -46,6 +46,8 @@ using the updated PO file:
 python3 script/tools/generate_cjk_font.py --font small=<10px BDF font> --font normal=<12px BDF font> --po files/lang/zh_TW.po \
     --charset big5 --license files/data/zh_hant_font_LICENSE.txt --output files/data/zh_hant_font.h2d
 ```
+For Simplified Chinese use `files/lang/zh_CN.po`, `--charset gb2312`, `files/data/zh_hans_font_LICENSE.txt` and
+`files/data/zh_hans_font.h2d` instead.
 The source font is listed in the license file next to the archive.
 
 ## Editing Translations - Before You Start

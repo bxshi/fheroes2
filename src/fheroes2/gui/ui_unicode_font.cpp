@@ -71,6 +71,10 @@ namespace
             return "zh_hant_font.h2d";
         }
 
+        if ( language == fheroes2::SupportedLanguage::SimplifiedChinese ) {
+            return "zh_hans_font.h2d";
+        }
+
         return {};
     }
 
