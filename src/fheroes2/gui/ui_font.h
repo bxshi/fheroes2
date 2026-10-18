@@ -77,4 +77,8 @@ namespace fheroes2
     // Maps made for Traditional Chinese with the original editor store texts in Big5 encoding.
     // This function converts such texts to UTF-8 used by the engine. A text which is already valid UTF-8 or is not valid Big5 is not changed.
     void convertBig5MP2MapText( std::string & str );
+
+    // Maps made for Simplified Chinese with the original editor store texts in GB2312 encoding.
+    // This function converts such texts to UTF-8 used by the engine. A text which is already valid UTF-8 or is not valid GB2312 is not changed.
+    void convertGb2312MP2MapText( std::string & str );
 }

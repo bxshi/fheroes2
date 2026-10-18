@@ -696,6 +696,9 @@ bool World::LoadMapMP2( const std::string & filename, const bool isOriginalMp2Fi
     else if ( fheroes2::getCurrentLanguage() == fheroes2::SupportedLanguage::TraditionalChinese ) {
         convertMapStrings( fheroes2::convertBig5MP2MapText );
     }
+    else if ( fheroes2::getCurrentLanguage() == fheroes2::SupportedLanguage::SimplifiedChinese ) {
+        convertMapStrings( fheroes2::convertGb2312MP2MapText );
+    }
 
     // If this assertion blows up it means that we are not reading the data properly from the file.
     assert( fs.tell() + 4 == fs.size() );

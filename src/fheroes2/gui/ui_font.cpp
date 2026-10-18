@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <initializer_list>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "encoding.h"
@@ -6765,6 +6766,22 @@ namespace
         fheroes2::DrawLine( released[222], { offset + 4, offset + 10 }, { offset + 5, offset + 11 }, buttonGoodReleasedColor );
         fheroes2::DrawLine( released[222], { offset + 3, offset + 12 }, { offset + 4, offset + 12 }, buttonGoodReleasedColor );
     }
+
+    // Converts a map text from a double-byte encoding to UTF-8 using the given decoder unless the text is already valid UTF-8.
+    void convertDoubleByteMP2MapText( std::string & str, std::string ( *decoder )( const std::string_view ) )
+    {
+        if ( fheroes2::isValidUtf8( str ) ) {
+            return;
+        }
+
+        std::string converted = decoder( str );
+
+        // Invalid characters are replaced by '?'. In this case the text most likely uses another encoding
+        // (for example, it is a map for another language) so we keep it as is.
+        if ( std::count( converted.begin(), converted.end(), '?' ) == std::count( str.begin(), str.end(), '?' ) ) {
+            str = std::move( converted );
+        }
+    }
 }
 
 namespace fheroes2
@@ -7400,16 +7417,11 @@ namespace fheroes2
 
     void convertBig5MP2MapText( std::string & str )
     {
-        if ( isValidUtf8( str ) ) {
-            return;
-        }
+        convertDoubleByteMP2MapText( str, Encoding::big5ToUtf8 );
+    }
 
-        std::string converted = Encoding::big5ToUtf8( str );
-
-        // Invalid Big5 characters are replaced by '?'. In this case the text most likely uses another encoding
-        // (for example, it is a map for another language) so we keep it as is.
-        if ( std::count( converted.begin(), converted.end(), '?' ) == std::count( str.begin(), str.end(), '?' ) ) {
-            str = std::move( converted );
-        }
+    void convertGb2312MP2MapText( std::string & str )
+    {
+        convertDoubleByteMP2MapText( str, Encoding::gb2312ToUtf8 );
     }
 }

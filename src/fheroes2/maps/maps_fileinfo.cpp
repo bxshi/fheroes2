@@ -342,6 +342,10 @@ bool Maps::FileInfo::readMP2Map( std::string filePath, const bool isForEditor )
         fheroes2::convertBig5MP2MapText( name );
         fheroes2::convertBig5MP2MapText( description );
     }
+    else if ( fheroes2::getCurrentLanguage() == fheroes2::SupportedLanguage::SimplifiedChinese ) {
+        fheroes2::convertGb2312MP2MapText( name );
+        fheroes2::convertGb2312MP2MapText( description );
+    }
 
     // Alliances of kingdoms
     if ( victoryConditionType == VICTORY_DEFEAT_OTHER_SIDE && !skipUnionSetup ) {
