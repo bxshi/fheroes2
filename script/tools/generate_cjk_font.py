@@ -27,7 +27,7 @@ rendered using the original game fonts.
 
 Generate:
     generate_cjk_font.py --font small=<10px.bdf> --font normal=<12px.bdf> \\
-                         [--po <file.po> ...] [--charset big5] [--license <file>] \\
+                         [--po <file.po> ...] [--charset big5|gb2312] [--license <file>] \\
                          --output <file.h2d>
 
 Verify:
@@ -80,6 +80,19 @@ BIG5_RANGES = [
     # Level-1 hanzi.
     (0xA440, 0xC67E),
 ]
+
+GB2312_RANGES = [
+    # Symbols.
+    (0xA1A1, 0xA9FE),
+    # Level-1 hanzi.
+    (0xB0A1, 0xD7FE),
+]
+
+# Python codec, byte pair ranges and valid trail bytes of each supported character set.
+CHARSETS = {
+    "big5": ("big5", BIG5_RANGES, lambda trail: 0x40 <= trail <= 0x7E or 0xA1 <= trail <= 0xFE),
+    "gb2312": ("gb2312", GB2312_RANGES, lambda trail: 0xA1 <= trail <= 0xFE),
+}
 
 
 class Glyph:  # pylint: disable=too-few-public-methods,too-many-arguments
@@ -244,15 +257,16 @@ def collect_po_characters(paths):
     return characters
 
 
-def collect_big5_characters():
+def collect_charset_characters(charset):
+    codec, ranges, is_trail_byte = CHARSETS[charset]
     characters = set()
-    for begin, end in BIG5_RANGES:
+    for begin, end in ranges:
         for code in range(begin, end + 1):
             trail = code & 0xFF
-            if not (0x40 <= trail <= 0x7E or 0xA1 <= trail <= 0xFE):
+            if not is_trail_byte(trail):
                 continue
             try:
-                text = bytes([code >> 8, trail]).decode("big5")
+                text = bytes([code >> 8, trail]).decode(codec)
             except UnicodeDecodeError:
                 continue
             characters.update(ord(ch) for ch in text if ord(ch) >= 0x80)
@@ -456,10 +470,10 @@ def generate(args):  # pylint: disable=too-many-locals
     requested |= po_characters
     print(f"Characters from PO files: {len(po_characters)}")
 
-    if args.charset == "big5":
-        big5_characters = collect_big5_characters()
-        requested |= big5_characters
-        print(f"Characters from Big5 charset: {len(big5_characters)}")
+    if args.charset:
+        charset_characters = collect_charset_characters(args.charset)
+        requested |= charset_characters
+        print(f"Characters from {args.charset} charset: {len(charset_characters)}")
 
     fixed_characters = collect_fixed_characters()
     requested = {codepoint for codepoint in requested if codepoint >= 0x80}
@@ -529,8 +543,8 @@ def parse_arguments():
     )
     parser.add_argument(
         "--charset",
-        choices=["big5"],
-        help="additional character set to include: 'big5' adds Big5 symbols and level-1 hanzi",
+        choices=sorted(CHARSETS),
+        help="additional character set to include: symbols and level-1 hanzi of Big5 or GB2312",
     )
     parser.add_argument(
         "--license",
