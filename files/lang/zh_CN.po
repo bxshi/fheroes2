@@ -438,7 +438,7 @@ msgid "View Ballista info"
 msgstr "查看发射炮信息"
 
 msgid "Ballista"
-msgstr "弹道"
+msgstr "弩车"
 
 msgid "Automatic combat modes"
 msgstr "自动战斗模式"
@@ -701,7 +701,7 @@ msgid "Through eagle-eyed observation, %{name} is able to learn the magic spell 
 msgstr "凭借敏锐的观察力，%{name} 学会了魔法 %{spell}。"
 
 msgid "Human"
-msgstr "真人"
+msgstr "人类"
 
 msgid "Terrain"
 msgstr "地形"
@@ -1131,7 +1131,7 @@ msgid "\"The Dwarfbane!!!!, run for your lives.\""
 msgstr "“矮人祸害！！！！逃命吧。”"
 
 msgid "campaignBonus|Animate Dead"
-msgstr "致死"
+msgstr "复活亡灵"
 
 msgid "campaignBonus|Chain Lightning"
 msgstr "闪电链"
@@ -1161,7 +1161,7 @@ msgid "campaignBonus|View Heroes"
 msgstr "看英雄"
 
 msgid "campaignBonus|Ballista"
-msgstr "弹道"
+msgstr "弩车"
 
 msgid "campaignBonus|Black Pearl"
 msgstr "Black Pearl"
@@ -2237,7 +2237,7 @@ msgid ""
 msgstr "一群%{monster}崇拜你的伟大的名声，希望加入你。接受吗？"
 
 msgid "Followers"
-msgstr "花丛"
+msgstr "追随者"
 
 msgid ""
 "The %{monster} is swayed by your diplomatic tongue, and offers to join your army for the sum of %{gold} gold.\n"
@@ -8085,7 +8085,7 @@ msgid "Stone Liths"
 msgstr "石阵"
 
 msgid "Wagon Camp"
-msgstr "龙营"
+msgstr "马车营地"
 
 msgid "Hut of the Magi"
 msgstr "袄教僧茅屋"
@@ -8435,16 +8435,16 @@ msgid "Goblins"
 msgstr "妖怪"
 
 msgid "Orc"
-msgstr "海怪"
+msgstr "兽人"
 
 msgid "Orcs"
-msgstr "海怪"
+msgstr "兽人"
 
 msgid "Orc Chief"
-msgstr "高级海怪"
+msgstr "高级兽人"
 
 msgid "Orc Chiefs"
-msgstr "高级海怪"
+msgstr "高级兽人"
 
 msgid "Wolf"
 msgstr "狼"
@@ -9218,7 +9218,7 @@ msgid "The %{name} increases the hero's movement on sea."
 msgstr "%{name} 增加英雄的海上移动力。"
 
 msgid "An old sea captain is being tortured by Ogres. You save him, and in return he rewards you with a wondrous instrument to measure the distance of a star."
-msgstr "一位老船长受尽了海怪的煎熬折磨。你拯救了他，为报答你，他送给你一个可以测量星距的神奇的仪器。"
+msgstr "一位老船长受尽了食人魔的煎熬折磨。你拯救了他，为报答你，他送给你一个可以测量星距的神奇的仪器。"
 
 msgid "Evil Eye"
 msgstr "邪恶之眼"
@@ -9323,7 +9323,7 @@ msgid "Ankh"
 msgstr "圣十字"
 
 msgid "The %{name} doubles the effectiveness of all of the hero's resurrect and animate spells."
-msgstr "%{name} 使英雄所有复活和致死法术的效果加倍。"
+msgstr "%{name} 使英雄所有复活和复活亡灵法术的效果加倍。"
 
 msgid "A fierce windstorm reveals the entrance to a buried tomb. Your investigation reveals that the tomb has already been looted, but the thieves overlooked an ankh on a silver chain in the dark."
 msgstr "一场强烈的风暴吹开了一座深埋土中的墓穴。查看后，你发现这座墓早就有盗墓贼光临过。不过盗贼们还是遗漏了黑暗中锁链上的圣十字。"
@@ -9554,7 +9554,7 @@ msgid "Spiked Helm"
 msgstr "长钉头盔"
 
 msgid "Your army is ambushed by a small tribe of wild (and none too bright) Orcs. You fend them off easily and the survivors flee in all directions. One of the Orcs was wearing a polished spiked helm. Figuring it will make a good souvenir, you take it."
-msgstr "你的军队中了一小队愚蠢之极的野海怪的埋伏。你轻而易举地打得他们四处逃散。其中一个海怪戴着一顶闪亮的头盔。这会是一个很好的战利品。你夺下了头盔。"
+msgstr "你的军队中了一小队愚蠢之极的野蛮兽人的埋伏。你轻而易举地打得他们四处逃散。其中一个兽人戴着一顶闪亮的头盔。这会是一个很好的战利品。你夺下了头盔。"
 
 msgid "Spiked Shield"
 msgstr "长钉盾牌"
@@ -10004,7 +10004,7 @@ msgid "Increases a unit's attack skill by 3. The effect lasts for 3 rounds of co
 msgstr ""
 
 msgid "Animate Dead"
-msgstr "致死"
+msgstr "复活亡灵"
 
 msgid "Resurrects creatures from a damaged or dead undead unit permanently."
 msgstr "永久复活受伤或死亡的亡灵单位中的生物。"
